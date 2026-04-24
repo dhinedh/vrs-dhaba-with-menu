@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;500;600&display=swap');
+
+:root {
+  --primary: #E8621A;
+  --primary-dark: #C64E12;
+  --secondary: #C9933B;
+  --accent: #1A1208;
+  --bg-cream: #FFFDF8;
+  --text-dark: #2D241E;
+  --text-light: #F5F5F5;
+  --veg: #2e7d32;
+  --non-veg: #c62828;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --radius: 16px;
+  --font-heading: 'Playfair Display', serif;
+  --font-body: 'Poppins', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-cream);
+  color: var(--text-dark);
+  line-height: 1.5;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain; /* Prevent pull-to-refresh if needed */
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+}
+
+.app-container {
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-cream);
+  position: relative;
+  padding-bottom: 90px; /* Space for bottom nav */
+}
+
+/* Custom Scrollbar (Hidden for mobile feel) */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animations */
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out forwards;
+}
+
+/* Utils */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary:active {
+  transform: scale(0.96);
+  background: var(--primary-dark);
+}
+
+.input-field {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #E0E0E0;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  background: #F9F9F9;
+}
+
+.input-field:focus {
+  border-color: var(--primary);
+  background: white;
+}
+
+/* Mobile Specific Tweaks */
+@media (max-width: 600px) {
+  .hero {
+    height: 220px;
+  }
+  .menu-grid {
+    grid-template-columns: 1fr;
+  }
+}
