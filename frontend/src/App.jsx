@@ -343,6 +343,16 @@ const App = () => {
                 <button onClick={() => setShowCart(false)}><X /></button>
               </div>
               <div className="sheet-content">
+                <div className="sheet-table-box">
+                  <Table size={18} color="#E8621A" />
+                  <input 
+                    type="number" 
+                    placeholder="Enter Table Number" 
+                    value={tableNumber} 
+                    onChange={e => setTableNumber(e.target.value)} 
+                  />
+                </div>
+
                 <div className="cart-items">
                   {Object.entries(cart).map(([id, qty]) => {
                     const item = menu.find(i => i.id === id);
@@ -368,6 +378,10 @@ const App = () => {
                     );
                   })}
                 </div>
+                <button className="btn-add-more" onClick={() => setShowCart(false)}>
+                  <Plus size={16} /> Add More Items
+                </button>
+
                 <textarea placeholder="Special instructions (e.g. spicy...)" value={specialNotes} onChange={e => setSpecialNotes(e.target.value)} />
                 {userRole !== 'waiter' && (
                   <div className="total-summary">
@@ -454,9 +468,13 @@ const App = () => {
         .sheet-bar { width: 40px; height: 4px; background: #DDD; border-radius: 2px; margin: 0 auto 15px; }
         .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .sheet-header button { background: #F5F5F5; border: none; padding: 6px; border-radius: 50%; }
-        .sheet-content { overflow-y: auto; flex: 1; }
-        .cart-items { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+        .sheet-content { padding: 0 20px 20px; max-height: 70vh; overflow-y: auto; }
+        .sheet-table-box { background: #F9F9F9; padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; border: 1px solid #EEE; }
+        .sheet-table-box input { border: none; background: transparent; font-size: 1rem; font-weight: 700; width: 100%; outline: none; }
+        .cart-items { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
         .cart-item { display: flex; justify-content: space-between; align-items: center; }
+        .btn-add-more { width: 100%; padding: 12px; border-radius: 12px; border: 2px dashed #DDD; background: transparent; color: #666; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; cursor: pointer; }
+        .btn-add-more:hover { border-color: var(--primary); color: var(--primary); }
         .item-main { display: flex; align-items: center; gap: 10px; }
         .item-ctrl { display: flex; align-items: center; gap: 12px; background: #F9F9F9; padding: 4px; border-radius: 8px; }
         .item-ctrl button { border: none; background: #DDD; padding: 4px; border-radius: 4px; }
