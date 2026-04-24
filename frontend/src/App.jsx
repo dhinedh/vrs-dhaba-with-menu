@@ -25,7 +25,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import heroBg from './assets/hero-bg.png';
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
 
 const App = () => {
   const [userRole, setUserRole] = useState(null); // 'admin', 'waiter', or null
