@@ -786,7 +786,7 @@ const MenuMgmt = ({ menu, setMenu, API_BASE }) => {
     setMenu(menu.filter(i => i.id !== id));
   };
 
-  const categories = ["Roti Varieties", "Chicken Gravy", "Egg Varieties", "Veg Varieties", "Veg Rice", "Non-Veg Rice", "Veg Noodles"];
+  const categories = ["Roti Varieties", "Chicken Gravy", "Egg Varieties", "Gravy", "Veg Varieties", "Veg Rice Varieties", "Non-Veg Rice & Noodles", "Noodles"];
 
   return (
     <div className="menu-mgmt">
