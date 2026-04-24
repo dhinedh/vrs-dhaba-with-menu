@@ -52,12 +52,21 @@ const App = () => {
     fetchData();
     const interval = setInterval(fetchOrders, 5000);
     
-    // Restore session
-    const savedLogin = localStorage.getItem("isLoggedIn") === "true";
-    const savedRole = localStorage.getItem("userRole");
-    if (savedLogin && savedRole) {
+    // Check for Customer Mode (e.g. ?table=5)
+    const params = new URLSearchParams(window.location.search);
+    const tableParam = params.get("table");
+    if (tableParam) {
       setIsLoggedIn(true);
-      setUserRole(savedRole);
+      setUserRole("customer");
+      setTableNumber(tableParam);
+    } else {
+      // Restore staff session
+      const savedLogin = localStorage.getItem("isLoggedIn") === "true";
+      const savedRole = localStorage.getItem("userRole");
+      if (savedLogin && savedRole) {
+        setIsLoggedIn(true);
+        setUserRole(savedRole);
+      }
     }
 
     return () => clearInterval(interval);
@@ -226,6 +235,8 @@ const App = () => {
     );
   }
 
+  const isCustomer = userRole === 'customer';
+
   return (
     <div className="app-container">
       {/* Premium Hero */}
@@ -243,14 +254,21 @@ const App = () => {
       {/* Floating Action Bar */}
       <div className="sticky-header">
         <div className="header-actions">
-          <div className="table-selector">
-            <Table size={16} />
-            <input type="number" placeholder="Table" value={tableNumber} onChange={e => setTableNumber(e.target.value)} />
-          </div>
+          {!isCustomer && (
+            <div className="table-selector">
+              <Table size={16} />
+              <input type="number" placeholder="Table" value={tableNumber} onChange={e => setTableNumber(e.target.value)} />
+            </div>
+          )}
           <div className="search-pill">
             <Search size={16} />
-            <input placeholder="Search number or item..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <input placeholder="Search menu items..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
+          {isCustomer && (
+            <div style={{background: '#E8621A', color: 'white', padding: '8px 15px', borderRadius: '12px', fontWeight: '800'}}>
+              T-{tableNumber}
+            </div>
+          )}
         </div>
         
         {/* Horizontal Categories */}
@@ -335,7 +353,7 @@ const App = () => {
             <div className="cart-pill" onClick={() => setShowCart(true)}>
               <div className="cart-badge">{cartCount}</div>
               <div className="cart-text">
-                <span>View Order</span>
+                <span>{isCustomer ? 'View My Order' : 'View Order Summary'}</span>
                 {userRole !== 'waiter' && <small>₹{cartTotal}</small>}
               </div>
               <ArrowRight size={20} />
@@ -345,16 +363,18 @@ const App = () => {
       </AnimatePresence>
 
       {/* Bottom Nav */}
-      <div className="bottom-nav">
-        <button className={`nav-item ${waiterTab === 'Menu' ? 'active' : ''}`} onClick={() => setWaiterTab('Menu')}><UtensilsCrossed size={22} /><span>Menu</span></button>
-        <button className={`nav-item ${waiterTab === 'Orders' ? 'active' : ''}`} onClick={() => setWaiterTab('Orders')}><Clock size={22} /><span>Last Orders</span></button>
-        <button className="nav-item" onClick={() => { 
-          setIsLoggedIn(false); 
-          setUserRole(null); 
-          localStorage.removeItem("isLoggedIn");
-          localStorage.removeItem("userRole");
-        }}><LogOut size={22} /><span>Logout</span></button>
-      </div>
+      {!isCustomer && (
+        <div className="bottom-nav">
+          <button className={`nav-item ${waiterTab === 'Menu' ? 'active' : ''}`} onClick={() => setWaiterTab('Menu')}><UtensilsCrossed size={22} /><span>Menu</span></button>
+          <button className={`nav-item ${waiterTab === 'Orders' ? 'active' : ''}`} onClick={() => setWaiterTab('Orders')}><Clock size={22} /><span>Last Orders</span></button>
+          <button className="nav-item" onClick={() => { 
+            setIsLoggedIn(false); 
+            setUserRole(null); 
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userRole");
+          }}><LogOut size={22} /><span>Logout</span></button>
+        </div>
+      )}
 
       {/* Bottom Sheet Modal */}
       <AnimatePresence>
