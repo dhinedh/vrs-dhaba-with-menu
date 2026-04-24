@@ -51,6 +51,15 @@ const App = () => {
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchOrders, 5000);
+    
+    // Restore session
+    const savedLogin = localStorage.getItem("isLoggedIn") === "true";
+    const savedRole = localStorage.getItem("userRole");
+    if (savedLogin && savedRole) {
+      setIsLoggedIn(true);
+      setUserRole(savedRole);
+    }
+
     return () => clearInterval(interval);
   }, []);
 
@@ -190,7 +199,12 @@ const App = () => {
   };
 
   if (!isLoggedIn) {
-    return <UnifiedLogin onLogin={(role) => { setIsLoggedIn(true); setUserRole(role); }} settings={settings} />;
+    return <UnifiedLogin onLogin={(role) => { 
+      setIsLoggedIn(true); 
+      setUserRole(role); 
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userRole", role);
+    }} settings={settings} />;
   }
 
   if (userRole === 'admin') {
@@ -198,7 +212,12 @@ const App = () => {
       <div className="app-container">
         <AdminDashboard 
           orders={orders} setOrders={setOrders} 
-          onLogout={() => { setIsLoggedIn(false); setUserRole(null); }} 
+          onLogout={() => { 
+            setIsLoggedIn(false); 
+            setUserRole(null); 
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userRole");
+          }} 
           menu={menu} setMenu={setMenu}
           settings={settings} setSettings={setSettings}
           API_BASE={API_BASE}
@@ -329,7 +348,12 @@ const App = () => {
       <div className="bottom-nav">
         <button className={`nav-item ${waiterTab === 'Menu' ? 'active' : ''}`} onClick={() => setWaiterTab('Menu')}><UtensilsCrossed size={22} /><span>Menu</span></button>
         <button className={`nav-item ${waiterTab === 'Orders' ? 'active' : ''}`} onClick={() => setWaiterTab('Orders')}><Clock size={22} /><span>Last Orders</span></button>
-        <button className="nav-item" onClick={() => { setIsLoggedIn(false); setUserRole(null); }}><LogOut size={22} /><span>Logout</span></button>
+        <button className="nav-item" onClick={() => { 
+          setIsLoggedIn(false); 
+          setUserRole(null); 
+          localStorage.removeItem("isLoggedIn");
+          localStorage.removeItem("userRole");
+        }}><LogOut size={22} /><span>Logout</span></button>
       </div>
 
       {/* Bottom Sheet Modal */}
