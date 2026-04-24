@@ -95,7 +95,7 @@ const App = () => {
 
   const cartTotal = useMemo(() => {
     return Object.entries(cart).reduce((total, [id, qty]) => {
-      const item = menu.find(i => i.id === parseInt(id));
+      const item = menu.find(i => i.id === id);
       return total + (item ? item.price * qty : 0);
     }, 0);
   }, [cart, menu]);
@@ -105,7 +105,13 @@ const App = () => {
   const placeOrder = async () => {
     if (!tableNumber) { alert("Please enter table number!"); return; }
 
-    const itemsArray = Object.entries(cart).map(([id, qty]) => ({ ...menu.find(i => i.id === parseInt(id)), quantity: qty }));
+    const itemsArray = Object.entries(cart)
+      .map(([id, qty]) => {
+        const item = menu.find(i => i.id === id);
+        return item ? { ...item, quantity: qty } : null;
+      })
+      .filter(item => item !== null);
+
     const total = itemsArray.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
     try {
@@ -339,7 +345,8 @@ const App = () => {
               <div className="sheet-content">
                 <div className="cart-items">
                   {Object.entries(cart).map(([id, qty]) => {
-                    const item = menu.find(i => i.id === parseInt(id));
+                    const item = menu.find(i => i.id === id);
+                    if (!item) return null; // Skip if item not found
                     return (
                       <div key={id} className="cart-item">
                         <div className="item-main">
