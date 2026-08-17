@@ -1,1090 +1,950 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {
-  ShoppingBag,
-  Plus,
-  Minus,
-  X,
-  CheckCircle2,
-  LayoutDashboard,
-  LogOut,
-  IndianRupee,
-  Clock,
-  Table,
-  UtensilsCrossed,
-  ChefHat,
-  Search,
-  Filter,
-  ArrowRight,
-  ChevronRight,
-  Smartphone,
-  Star
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Plus, 
+  Minus, 
+  X, 
+  CheckCircle2, 
+  LogOut, 
+  Clock, 
+  Table, 
+  UtensilsCrossed, 
+  ChefHat, 
+  Search, 
+  ArrowRight, 
+  Settings, 
+  TrendingUp, 
+  Package, 
+  Trash2, 
+  Edit2, 
+  ShoppingBag 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import heroBg from './assets/hero-bg.png';
 
-// --- CONSTANTS ---
-const MENU_DATA = {
-  "Roti Varieties": [
-    { id: 1, no: "101", name: "Roti", price: 15, veg: true, icon: "🫓" },
-    { id: 2, no: "102", name: "Butter Roti", price: 20, veg: true, icon: "🫓" },
-    { id: 3, no: "103", name: "Butter Naan", price: 50, veg: true, icon: "🫓" },
-    { id: 4, no: "104", name: "Garlic Roti", price: 30, veg: true, icon: "🫓" },
-    { id: 5, no: "105", name: "Plain Naan", price: 40, veg: true, icon: "🫓" },
-    { id: 6, no: "106", name: "Garlic Naan", price: 80, veg: true, icon: "🫓" },
-    { id: 7, no: "107", name: "Half Naan", price: 25, veg: true, icon: "🫓" },
-  ],
-  "Chicken Gravy": [
-    { id: 8, no: "201", name: "Chicken Masala", price: 150, veg: false, icon: "🍗" },
-    { id: 9, no: "202", name: "Pepper Chicken", price: 180, veg: false, icon: "🍗" },
-    { id: 10, no: "203", name: "Ginger Chicken", price: 170, veg: false, icon: "🍗" },
-    { id: 11, no: "204", name: "Garlic Chicken", price: 190, veg: false, icon: "🍗" },
-    { id: 12, no: "205", name: "Chettinad Chicken", price: 200, veg: false, icon: "🍗" },
-    { id: 13, no: "206", name: "Mughlai Chicken", price: 230, veg: false, icon: "🍗" },
-    { id: 14, no: "207", name: "Punjabi Chicken", price: 220, veg: false, icon: "🍗" },
-    { id: 15, no: "208", name: "Chilli Chicken", price: 200, veg: false, icon: "🍗" },
-    { id: 16, no: "209", name: "Butter Chicken", price: 210, veg: false, icon: "🍗" },
-    { id: 17, no: "210", name: "Andhra Chicken", price: 230, veg: false, icon: "🍗" },
-  ],
-  "Egg Varieties": [
-    { id: 18, no: "301", name: "Egg Podimas", price: 50, veg: false, icon: "🍳" },
-    { id: 19, no: "302", name: "Egg Keema", price: 110, veg: false, icon: "🍳" },
-  ],
-  "Gravy": [
-    { id: 20, no: "401", name: "Mutton Masala", price: 250, veg: false, icon: "🍲" },
-    { id: 21, no: "402", name: "Kadai Masala", price: 170, veg: false, icon: "🍲" },
-    { id: 22, no: "403", name: "Prawn Masala", price: 250, veg: false, icon: "🍤" },
-    { id: 23, no: "404", name: "Squid Masala", price: 250, veg: false, icon: "🦑" },
-    { id: 24, no: "405", name: "Naatu Kozhi", price: 220, veg: false, icon: "🍲" },
-  ],
-  "Veg Varieties": [
-    { id: 25, no: "501", name: "Dal", price: 100, veg: true, icon: "🥣" },
-    { id: 26, no: "502", name: "Dal Tadka", price: 130, veg: true, icon: "🥣" },
-    { id: 27, no: "503", name: "Dal Makhani", price: 150, veg: true, icon: "🥣" },
-    { id: 28, no: "504", name: "Channa Masala", price: 100, veg: true, icon: "🥣" },
-    { id: 29, no: "505", name: "Paneer Butter Masala", price: 170, veg: true, icon: "🧀" },
-    { id: 30, no: "506", name: "Paneer Masala", price: 170, veg: true, icon: "🧀" },
-    { id: 31, no: "507", name: "Mushroom Masala", price: 160, veg: true, icon: "🍄" },
-    { id: 32, no: "508", name: "Gobi Masala", price: 150, veg: true, icon: "🥦" },
-  ],
-  "Veg Rice": [
-    { id: 33, no: "601", name: "Channa Rice", price: 100, veg: true, icon: "🍚" },
-    { id: 34, no: "602", name: "Jeera Rice", price: 100, veg: true, icon: "🍚" },
-    { id: 35, no: "603", name: "Paneer Rice", price: 170, veg: true, icon: "🍚" },
-    { id: 36, no: "604", name: "Mushroom Rice", price: 160, veg: true, icon: "🍚" },
-    { id: 37, no: "605", name: "Special Thayir Sadham", price: 100, veg: true, icon: "🍚" },
-  ],
-  "Non-Veg Rice": [
-    { id: 38, no: "701", name: "Chicken Rice", price: 120, veg: false, icon: "🍛" },
-    { id: 39, no: "702", name: "Dhaba Chicken Rice", price: 130, veg: false, icon: "🍛" },
-    { id: 40, no: "703", name: "Kadai Rice", price: 170, veg: false, icon: "🍛" },
-    { id: 41, no: "704", name: "Mutton Rice", price: 250, veg: false, icon: "🍛" },
-    { id: 42, no: "705", name: "Prawn Rice", price: 250, veg: false, icon: "🍛" },
-    { id: 43, no: "706", name: "Squid Rice", price: 250, veg: false, icon: "🍛" },
-  ]
-}
-const API_BASE = "http://localhost:3001/api";
+const INITIAL_MENU = [
+  { id: "1", no: "101", name: "Roti", price: 15, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "2", no: "102", name: "Butter Roti", price: 20, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "3", no: "103", name: "Butter Naan", price: 50, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "4", no: "104", name: "Garlic Roti", price: 30, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "5", no: "105", name: "Plain Naan", price: 40, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "6", no: "106", name: "Garlic Naan", price: 80, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "7", no: "107", name: "Half Naan", price: 25, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "8", no: "201", name: "Chicken Masala", price: 150, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "9", no: "202", name: "Pepper Chicken", price: 180, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "10", no: "203", name: "Ginger Chicken", price: 170, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "11", no: "204", name: "Garlic Chicken", price: 190, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "12", no: "205", name: "Chettinad Chicken", price: 200, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "13", no: "206", name: "Mughlai Chicken", price: 230, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "14", no: "207", name: "Punjabi Chicken", price: 220, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "15", no: "208", name: "Chilli Chicken", price: 200, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "16", no: "209", name: "Butter Chicken", price: 210, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "17", no: "210", name: "Andhra Chicken", price: 230, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "18", no: "301", name: "Egg Podimas", price: 50, veg: false, icon: "🍳", category: "Egg Varieties" },
+  { id: "19", no: "302", name: "Egg Keema", price: 110, veg: false, icon: "🍳", category: "Egg Varieties" },
+  { id: "20", no: "401", name: "Mutton Masala", price: 250, veg: false, icon: "🍲", category: "Gravy" },
+  { id: "21", no: "402", name: "Kadai Masala", price: 170, veg: false, icon: "🍲", category: "Gravy" },
+  { id: "22", no: "403", name: "Prawn Masala", price: 250, veg: false, icon: "🍤", category: "Gravy" },
+  { id: "23", no: "404", name: "Squid Masala", price: 250, veg: false, icon: "🦑", category: "Gravy" },
+  { id: "24", no: "405", name: "Naatu Kozhi", price: 220, veg: false, icon: "🍲", category: "Gravy" },
+  { id: "25", no: "501", name: "Dal", price: 100, veg: true, icon: "🥣", category: "Veg Varieties" },
+  { id: "26", no: "502", name: "Dal Tadka", price: 130, veg: true, icon: "🥣", category: "Veg Varieties" },
+  { id: "27", no: "503", name: "Dal Makhani", price: 150, veg: true, icon: "🥣", category: "Veg Varieties" },
+  { id: "28", no: "504", name: "Channa Masala", price: 100, veg: true, icon: "🥣", category: "Veg Varieties" },
+  { id: "29", no: "505", name: "Paneer Butter Masala", price: 170, veg: true, icon: "🧀", category: "Veg Varieties" },
+  { id: "30", no: "506", name: "Paneer Masala", price: 170, veg: true, icon: "🧀", category: "Veg Varieties" },
+  { id: "31", no: "507", name: "Mushroom Masala", price: 160, veg: true, icon: "🍄", category: "Veg Varieties" },
+  { id: "32", no: "508", name: "Gobi Masala", price: 150, veg: true, icon: "🥦", category: "Veg Varieties" },
+  { id: "33", no: "601", name: "Channa Rice", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
+  { id: "34", no: "602", name: "Jeera Rice", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
+  { id: "35", no: "603", name: "Paneer Rice", price: 170, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
+  { id: "36", no: "604", name: "Mushroom Rice", price: 160, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
+  { id: "37", no: "605", name: "Special Thayir Sadham", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
+  { id: "38", no: "701", name: "Chicken Rice", price: 120, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "39", no: "702", name: "Dhaba Chicken Rice", price: 130, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "40", no: "703", name: "Kadai Rice", price: 170, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "41", no: "704", name: "Mutton Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "42", no: "705", name: "Prawn Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "43", no: "706", name: "Squid Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "44", no: "707", name: "Naatu Kozhi Rice", price: 220, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "45", no: "708", name: "Egg Rice", price: 110, veg: false, icon: "🍳", category: "Non-Veg Rice & Noodles" },
+  { id: "46", no: "709", name: "Chicken Noodles", price: 120, veg: false, icon: "🍜", category: "Non-Veg Rice & Noodles" },
+  { id: "47", no: "710", name: "Egg Noodles", price: 110, veg: false, icon: "🍜", category: "Non-Veg Rice & Noodles" },
+  { id: "48", no: "801", name: "Gobi Noodles", price: 150, veg: true, icon: "🍜", category: "Noodles" },
+  { id: "49", no: "802", name: "Veg Noodles", price: 100, veg: true, icon: "🍜", category: "Noodles" }
+];
 
-  const App = () => {
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [isWaiter, setIsWaiter] = useState(true);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [menu, setMenu] = useState([]);
-    const [orders, setOrders] = useState([]);
-    const [settings, setSettings] = useState({ name: "VRS Garden Dhaba", tagline: "Delicious", gst: 5 });
-    const [cart, setCart] = useState({});
-    const [tableNumber, setTableNumber] = useState("");
-    const [activeCategory, setActiveCategory] = useState("");
-    const [showCart, setShowCart] = useState(false);
-    const [lastOrder, setLastOrder] = useState(null);
-    const [specialNotes, setSpecialNotes] = useState("");
-    const [searchQuery, setSearchQuery] = useState("");
+const INITIAL_SETTINGS = {
+  name: "VRS Garden Dhaba",
+  tagline: "Delicious Taste, Affordable Price",
+  gst: 5
+};
 
-    const categories = useMemo(() => {
-      const cats = [...new Set(menu.map(item => item.category))];
-      return cats.map(c => ({ name: c, icon: "🍽️" }));
-    }, [menu]);
+const INITIAL_ORDERS = [
+  {
+    id: "ORD-307",
+    tableNumber: "5",
+    items: [
+      { id: "3", no: "103", name: "Butter Naan", price: 50, veg: true, icon: "🫓", category: "Roti Varieties", quantity: 1 }
+    ],
+    total: 50,
+    notes: "",
+    status: "Ready",
+    timestamp: "2026-04-21T13:12:24.952Z"
+  }
+];
 
-    useEffect(() => {
-      fetchData();
-      const interval = setInterval(fetchOrders, 5000); // Poll for new orders
-      return () => clearInterval(interval);
-    }, []);
+const App = () => {
+  const [userRole, setUserRole] = useState(null); // 'admin', 'waiter', 'customer', or null
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
+  // LocalStorage state initialization
+  const [menu, setMenuState] = useState(() => {
+    const saved = localStorage.getItem("vrs_menu");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem("vrs_menu", JSON.stringify(INITIAL_MENU));
+    return INITIAL_MENU;
+  });
 
-    useEffect(() => {
-      if (categories.length > 0 && !activeCategory) {
-        setActiveCategory(categories[0].name);
-      }
-    }, [categories]);
+  const [orders, setOrdersState] = useState(() => {
+    const saved = localStorage.getItem("vrs_orders");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem("vrs_orders", JSON.stringify(INITIAL_ORDERS));
+    return INITIAL_ORDERS;
+  });
 
-    const fetchData = async () => {
-      try {
-        const [menuRes, settingsRes] = await Promise.all([
-          fetch(`${API_BASE}/menu`),
-          fetch(`${API_BASE}/settings`)
-        ]);
-        const menuData = await menuRes.json();
-        const settingsData = await settingsRes.json();
-        setMenu(menuData);
-        setSettings(settingsData);
-        fetchOrders();
-      } catch (err) {
-        console.error("Fetch error:", err);
-      }
+  const [settings, setSettingsState] = useState(() => {
+    const saved = localStorage.getItem("vrs_settings");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem("vrs_settings", JSON.stringify(INITIAL_SETTINGS));
+    return INITIAL_SETTINGS;
+  });
+
+  const [cart, setCart] = useState({});
+  const [tableNumber, setTableNumber] = useState("");
+  const [activeCategory, setActiveCategory] = useState("");
+  const [showCart, setShowCart] = useState(false);
+  const [lastOrder, setLastOrder] = useState(null);
+  const [specialNotes, setSpecialNotes] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [waiterTab, setWaiterTab] = useState("Menu");
+  const [editingOrderId, setEditingOrderId] = useState(null);
+
+  // Helper sync functions
+  const setMenu = (newMenu) => {
+    setMenuState(prev => {
+      const value = typeof newMenu === 'function' ? newMenu(prev) : newMenu;
+      localStorage.setItem("vrs_menu", JSON.stringify(value));
+      return value;
+    });
+  };
+
+  const setOrders = (newOrders) => {
+    setOrdersState(prev => {
+      const value = typeof newOrders === 'function' ? newOrders(prev) : newOrders;
+      localStorage.setItem("vrs_orders", JSON.stringify(value));
+      return value;
+    });
+  };
+
+  const setSettings = (newSettings) => {
+    setSettingsState(prev => {
+      const value = typeof newSettings === 'function' ? newSettings(prev) : newSettings;
+      localStorage.setItem("vrs_settings", JSON.stringify(value));
+      return value;
+    });
+  };
+
+  // Sync across tabs in real-time
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === "vrs_menu" && e.newValue) setMenuState(JSON.parse(e.newValue));
+      if (e.key === "vrs_orders" && e.newValue) setOrdersState(JSON.parse(e.newValue));
+      if (e.key === "vrs_settings" && e.newValue) setSettingsState(JSON.parse(e.newValue));
     };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
-    const fetchOrders = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/orders`);
-        const data = await res.json();
-        setOrders(data.reverse());
-      } catch (err) {
-        console.error("Order fetch error:", err);
+  const categories = useMemo(() => {
+    const cats = [...new Set(menu.map(item => item.category))];
+    return cats.map(c => ({ name: c, icon: "🍽️" }));
+  }, [menu]);
+
+  useEffect(() => {
+    // Check for Customer Mode (e.g. ?table=5)
+    const params = new URLSearchParams(window.location.search);
+    const tableParam = params.get("table");
+    if (tableParam) {
+      setIsLoggedIn(true);
+      setUserRole("customer");
+      setTableNumber(tableParam);
+    } else {
+      // Restore staff session
+      const savedLogin = localStorage.getItem("isLoggedIn") === "true";
+      const savedRole = localStorage.getItem("userRole");
+      if (savedLogin && savedRole) {
+        setIsLoggedIn(true);
+        setUserRole(savedRole);
       }
-    };
+    }
+  }, []);
 
-    const filteredMenu = useMemo(() => {
-      if (!searchQuery) return menu.filter(i => i.category === activeCategory);
-      return menu.filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.no.includes(searchQuery)
-      );
-    }, [activeCategory, searchQuery, menu]);
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0].name);
+    }
+  }, [categories]);
 
-    const cartItemsCount = Object.values(cart).reduce((a, b) => a + b, 0);
-    const cartTotal = useMemo(() => {
-      let total = 0;
-      Object.entries(cart).forEach(([id, qty]) => {
-        const item = menu.find(i => i.id === parseInt(id));
-        if (item) total += item.price * qty;
-      });
-      return total;
-    }, [cart, menu]);
+  const filteredMenu = useMemo(() => {
+    const base = searchQuery ? menu : menu.filter(i => i.category === activeCategory);
+    if (!searchQuery) return base;
+    return menu.filter(item => 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      String(item.no).includes(searchQuery)
+    );
+  }, [activeCategory, searchQuery, menu]);
 
-    const addToCart = (item) => {
-      setCart(prev => ({ ...prev, [item.id]: (prev[item.id] || 0) + 1 }));
-    };
+  const cartTotal = useMemo(() => {
+    return Object.entries(cart).reduce((total, [id, qty]) => {
+      const item = menu.find(i => String(i.id) === String(id));
+      return total + (item ? item.price * qty : 0);
+    }, 0);
+  }, [cart, menu]);
 
-    const removeFromCart = (item) => {
-      setCart(prev => {
-        const newCart = { ...prev };
-        if (newCart[item.id] > 1) newCart[item.id]--;
-        else delete newCart[item.id];
-        return newCart;
-      });
-    };
+  const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
 
-    const placeOrder = async () => {
-      if (!tableNumber) {
-        alert("Please enter table number!");
-        return;
-      }
-      const orderItems = Object.entries(cart).map(([id, qty]) => {
-        const item = menu.find(i => i.id === parseInt(id));
-        return { ...item, quantity: qty };
-      });
+  const placeOrder = () => {
+    if (!tableNumber) { alert("Please enter table number!"); return; }
 
-      const orderData = {
-        tableNumber,
-        items: orderItems,
-        total: cartTotal,
+    const itemsArray = Object.entries(cart)
+      .map(([id, qty]) => {
+        const item = menu.find(i => String(i.id) === String(id));
+        return item ? { ...item, quantity: qty } : null;
+      })
+      .filter(item => item !== null);
+
+    if (itemsArray.length === 0) return;
+
+    const total = itemsArray.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+    let updatedOrders = [...orders];
+    let createdOrUpdatedOrder = null;
+
+    if (editingOrderId) {
+      createdOrUpdatedOrder = {
+        id: editingOrderId,
+        tableNumber: tableNumber.toString(),
+        items: itemsArray,
+        total: total,
         notes: specialNotes,
-        status: "Pending"
+        status: 'Pending',
+        timestamp: new Date().toISOString()
       };
+      updatedOrders = updatedOrders.map(o => o.id === editingOrderId ? createdOrUpdatedOrder : o);
+      setEditingOrderId(null);
+    } else {
+      const activeOrderIndex = updatedOrders.findIndex(o => o.tableNumber.toString() === tableNumber.toString() && o.status !== 'Billed');
 
-      setShowCart(false);
-      setSpecialNotes("");
-    };
+      if (activeOrderIndex !== -1) {
+        const activeOrder = updatedOrders[activeOrderIndex];
+        const mergedItems = [...activeOrder.items];
+        itemsArray.forEach(newItem => {
+          const existing = mergedItems.find(i => String(i.id) === String(newItem.id));
+          if (existing) {
+            existing.quantity += newItem.quantity;
+          } else {
+            mergedItems.push(newItem);
+          }
+        });
 
-    if (isAdmin) {
-      return (
-        <div className="app-container">
-          {!isLoggedIn ? (
-            <AdminLogin onLogin={() => setIsLoggedIn(true)} onBack={() => setIsAdmin(false)} />
-          ) : (
-            <AdminDashboard
-              orders={orders}
-              setOrders={setOrders}
-              onLogout={() => setIsLoggedIn(false)}
-              onBack={() => setIsAdmin(false)}
-              menu={menu}
-              setMenu={setMenu}
-              settings={settings}
-              setSettings={setSettings}
-              API_BASE={API_BASE}
-            />
-          )}
-        </div>
-      );
+        const newTotal = mergedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+        createdOrUpdatedOrder = {
+          ...activeOrder,
+          items: mergedItems,
+          total: newTotal,
+          notes: activeOrder.notes ? activeOrder.notes + (specialNotes ? " | " + specialNotes : "") : specialNotes,
+          status: 'Pending',
+          timestamp: new Date().toISOString()
+        };
+
+        updatedOrders[activeOrderIndex] = createdOrUpdatedOrder;
+      } else {
+        createdOrUpdatedOrder = {
+          id: "ORD-" + Math.floor(100 + Math.random() * 900),
+          tableNumber: tableNumber.toString(),
+          items: itemsArray,
+          total: total,
+          notes: specialNotes,
+          status: "Pending",
+          timestamp: new Date().toISOString()
+        };
+        updatedOrders = [createdOrUpdatedOrder, ...updatedOrders];
+      }
     }
 
+    setOrders(updatedOrders);
+    setLastOrder(createdOrUpdatedOrder);
+    setCart({});
+    setShowCart(false);
+    setSpecialNotes("");
+  };
+
+  if (!isLoggedIn) {
+    return <UnifiedLogin onLogin={(role) => { 
+      setIsLoggedIn(true); 
+      setUserRole(role); 
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("userRole", role);
+    }} settings={settings} />;
+  }
+
+  if (userRole === 'admin') {
     return (
       <div className="app-container">
-        {/* Hero Section */}
-        <div className="hero" style={{ backgroundImage: `linear-gradient(to bottom, rgba(26, 18, 8, 0.7), #1A1208), url(${heroBg})` }}>
-          <div className="hero-content">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="hero-title"
-            >
-              {settings.name}
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="hero-tagline"
-            >
-              {settings.tagline}
-            </motion.p>
-            <div className="hero-stats">
-              <div className="stat-item">
-                <span className="stat-value">50+</span>
-                <span className="stat-label">Dishes</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-value">₹15</span>
-                <span className="stat-label">Starts at</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-value">100%</span>
-                <span className="stat-label">Fresh Daily</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <AdminDashboard 
+          orders={orders} setOrders={setOrders} 
+          onLogout={() => { 
+            setIsLoggedIn(false); 
+            setUserRole(null); 
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userRole");
+          }} 
+          menu={menu} setMenu={setMenu}
+          settings={settings} setSettings={setSettings}
+        />
+      </div>
+    );
+  }
 
-        {/* Sticky Table & Search Bar */}
-        <div className="table-search-bar">
-          <div className="top-row">
-            <div className="table-input-container">
-              <Table size={18} className="icon-gold" />
-              <input
-                type="number"
-                placeholder="Table"
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                className="table-input"
-              />
-            </div>
-            <div className="mode-toggle">
-              <button
-                className={`toggle-btn ${!isWaiter ? 'active' : ''}`}
-                onClick={() => setIsWaiter(false)}
-              >Customer</button>
-              <button
-                className={`toggle-btn ${isWaiter ? 'active' : ''}`}
-                onClick={() => setIsWaiter(true)}
-              >Waiter</button>
-            </div>
-          </div>
-          <div className="search-container">
-            <Search size={18} className="icon-gray" />
-            <input
-              type="text"
-              placeholder="Search by name or food number..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-          </div>
-        </div>
+  const isCustomer = userRole === 'customer';
 
-        {/* Category Navigation (Hidden when searching) */}
+  return (
+    <div className="app-container">
+      {/* Hero */}
+      <div className="hero" style={{ backgroundImage: `linear-gradient(to bottom, rgba(26, 18, 8, 0.4), #1A1208), url(${heroBg})` }}>
+        <div className="hero-content">
+          <div className="hero-top">
+            <ChefHat color="#E8621A" size={24} />
+            <span>Since 1998</span>
+          </div>
+          <h1>{settings.name}</h1>
+          <p>{settings.tagline}</p>
+        </div>
+      </div>
+
+      {/* Floating Action Bar */}
+      <div className="sticky-header">
+        <div className="header-actions">
+          {!isCustomer && (
+            <div className="table-selector">
+              <Table size={16} />
+              <input type="number" placeholder="Table" value={tableNumber} onChange={e => setTableNumber(e.target.value)} />
+            </div>
+          )}
+          <div className="search-pill">
+            <Search size={16} />
+            <input placeholder="Search menu items..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+          </div>
+          {isCustomer && (
+            <div style={{background: '#E8621A', color: 'white', padding: '8px 15px', borderRadius: '12px', fontWeight: '800'}}>
+              T-{tableNumber}
+            </div>
+          )}
+        </div>
+        
+        {/* Horizontal Categories */}
         {!searchQuery && (
-          <div className="category-nav">
-            {categories.map((cat) => (
-              <button
-                key={cat.name}
-                className={`category-btn ${activeCategory === cat.name ? 'active' : ''}`}
+          <div className="category-scroll">
+            {categories.map(cat => (
+              <button 
+                key={cat.name} 
+                className={activeCategory === cat.name ? 'active' : ''}
                 onClick={() => setActiveCategory(cat.name)}
               >
-                <span className="cat-emoji">{cat.icon}</span>
-                <span className="cat-name">{cat.name}</span>
+                {cat.name}
               </button>
             ))}
           </div>
         )}
+      </div>
 
-        {/* Menu List */}
-        <div className="menu-list">
-          <h2 className="section-title">
-            {searchQuery ? `Search Results (${filteredMenu.length})` : activeCategory}
-          </h2>
-          <div className="menu-grid">
-            {filteredMenu.map((item) => (
-              <MenuCard
-                key={item.id}
-                item={item}
-                isWaiter={isWaiter}
-                quantity={cart[item.id] || 0}
-                onAdd={() => addToCart(item)}
-                onRemove={() => removeFromCart(item)}
-              />
+      {/* Menu / Orders Toggle */}
+      {waiterTab === "Menu" ? (
+        <>
+          <div className="menu-section">
+            <div className="section-header">
+              <h2>{searchQuery ? 'Search Results' : activeCategory}</h2>
+            </div>
+            
+            <div className="menu-list">
+              {filteredMenu.map(item => (
+                <MenuCard 
+                  key={item.id} item={item} isWaiter={true} 
+                  qty={cart[item.id] || 0}
+                  onAdd={() => setCart({...cart, [item.id]: (cart[item.id] || 0) + 1})}
+                  onRemove={() => {
+                    const newCart = {...cart};
+                    if (newCart[item.id] > 1) newCart[item.id]--;
+                    else delete newCart[item.id];
+                    setCart(newCart);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="active-orders-section" style={{padding: '20px'}}>
+          <h2>Active Orders</h2>
+          <div className="order-list">
+            {orders.filter(o => o.status !== 'Billed').map(o => (
+              <div key={o.id} className="order-card" style={{background: 'white', padding: '15px', borderRadius: '15px', marginBottom: '10px', border: '1px solid #eee'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between'}}>
+                  <strong>Table {o.tableNumber}</strong>
+                  <span style={{fontSize: '0.8rem', color: '#666'}}>{o.status}</span>
+                </div>
+                <div style={{fontSize: '0.9rem', margin: '5px 0'}}>
+                  {o.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                </div>
+                <button 
+                  className="btn-edit-order" 
+                  style={{background: '#E8621A', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: '600', marginTop: '10px'}}
+                  onClick={() => {
+                    const newCart = {};
+                    o.items.forEach(i => newCart[i.id] = i.quantity);
+                    setCart(newCart);
+                    setTableNumber(o.tableNumber);
+                    setEditingOrderId(o.id);
+                    setWaiterTab("Menu");
+                    setShowCart(true);
+                  }}
+                >
+                  Edit / Add Items
+                </button>
+              </div>
             ))}
           </div>
         </div>
+      )}
 
-        {/* Sticky Cart Bar */}
-        <AnimatePresence>
-          {cartItemsCount > 0 && (
-            <motion.div
-              initial={{ y: 100 }}
-              animate={{ y: 0 }}
-              exit={{ y: 100 }}
-              className="cart-bar"
-            >
-              <div className="cart-bar-content">
-                <div className="cart-info">
-                  <span className="cart-count">{cartItemsCount} Items</span>
-                  {!isWaiter && <span className="cart-total">₹{cartTotal}</span>}
+      {/* Floating Cart Pill */}
+      <AnimatePresence>
+        {cartCount > 0 && (
+          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="floating-cart">
+            <div className="cart-pill" onClick={() => setShowCart(true)}>
+              <div className="cart-badge">{cartCount}</div>
+              <div className="cart-text">
+                <span>{isCustomer ? 'View My Order' : 'View Order Summary'}</span>
+                {userRole !== 'waiter' && <small>₹{cartTotal}</small>}
+              </div>
+              <ArrowRight size={20} />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Bottom Nav */}
+      {!isCustomer && (
+        <div className="bottom-nav">
+          <button className={`nav-item ${waiterTab === 'Menu' ? 'active' : ''}`} onClick={() => setWaiterTab('Menu')}><UtensilsCrossed size={22} /><span>Menu</span></button>
+          <button className={`nav-item ${waiterTab === 'Orders' ? 'active' : ''}`} onClick={() => setWaiterTab('Orders')}><Clock size={22} /><span>Last Orders</span></button>
+          <button className="nav-item" onClick={() => { 
+            setIsLoggedIn(false); 
+            setUserRole(null); 
+            localStorage.removeItem("isLoggedIn");
+            localStorage.removeItem("userRole");
+          }}><LogOut size={22} /><span>Logout</span></button>
+        </div>
+      )}
+
+      {/* Bottom Sheet Modal */}
+      <AnimatePresence>
+        {showCart && (
+          <div className="modal-bg" onClick={() => setShowCart(false)}>
+            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="sheet" onClick={e => e.stopPropagation()}>
+              <div className="sheet-bar" />
+              <div className="sheet-header">
+                <h3>Order Summary</h3>
+                <button onClick={() => setShowCart(false)}><X /></button>
+              </div>
+              <div className="sheet-content">
+                <div className="sheet-table-box">
+                  <Table size={18} color="#E8621A" />
+                  <input 
+                    type="number" 
+                    placeholder="Enter Table Number" 
+                    value={tableNumber} 
+                    onChange={e => setTableNumber(e.target.value)} 
+                  />
                 </div>
-                <button className="btn-view-order" onClick={() => setShowCart(true)}>
-                  View Order <ArrowRight size={18} />
+
+                <div className="cart-items">
+                  {Object.entries(cart).map(([id, qty]) => {
+                    const item = menu.find(i => String(i.id) === String(id));
+                    if (!item) return null;
+                    return (
+                      <div key={id} className="cart-item">
+                        <div className="item-main">
+                          <span className={`dot ${item.veg ? 'veg' : 'non-veg'}`} />
+                          <div className="item-name">{item.name}</div>
+                        </div>
+                        <div className="item-ctrl">
+                          <button onClick={() => {
+                             const newCart = {...cart};
+                             if (newCart[id] > 1) newCart[id]--;
+                             else delete newCart[id];
+                             setCart(newCart);
+                          }}><Minus size={14} /></button>
+                          <span>{qty}</span>
+                          <button onClick={() => setCart({...cart, [id]: (cart[id] || 0) + 1})}><Plus size={14} /></button>
+                        </div>
+                        <div className="item-price">₹{item.price * qty}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <button className="btn-add-more" onClick={() => setShowCart(false)}>
+                  <Plus size={16} /> Add More Items
+                </button>
+
+                <textarea placeholder="Special instructions (e.g. spicy...)" value={specialNotes} onChange={e => setSpecialNotes(e.target.value)} />
+                {userRole !== 'waiter' && (
+                  <div className="total-summary">
+                    <div className="row"><span>Subtotal</span><span>₹{cartTotal}</span></div>
+                    <div className="row"><span>GST ({settings.gst}%)</span><span>₹{Math.round(cartTotal * settings.gst / 100)}</span></div>
+                    <div className="row grand"><span>Total</span><span>₹{cartTotal + Math.round(cartTotal * settings.gst / 100)}</span></div>
+                  </div>
+                )}
+                <button className="btn-order" onClick={placeOrder}>
+                  {editingOrderId ? 'Update Order' : 'Confirm Order'}
                 </button>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
+          </div>
+        )}
+      </AnimatePresence>
 
-        {/* Bottom Nav */}
-        <div className="bottom-nav">
-          <button className="nav-btn active">
-            <UtensilsCrossed size={20} />
-            <span>Menu</span>
-          </button>
-          <button className="nav-btn" onClick={() => setIsAdmin(true)}>
-            <LayoutDashboard size={20} />
-            <span>Admin</span>
-          </button>
-        </div>
+      {/* Success Animation */}
+      <AnimatePresence>
+        {lastOrder && (
+          <div className="success-overlay">
+            <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="success-modal">
+              <CheckCircle2 size={64} color="#2e7d32" />
+              <h2>Order Sent!</h2>
+              <div className="order-id-badge">#{lastOrder.id}</div>
+              <button className="btn-primary" onClick={() => setLastOrder(null)}>Done</button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
-        {/* Checkout Bottom Sheet */}
-        <AnimatePresence>
-          {showCart && (
-            <div className="modal-overlay" onClick={() => setShowCart(false)}>
-              <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="bottom-sheet"
-                onClick={e => e.stopPropagation()}
-              >
-                <div className="sheet-handle" />
-                <div className="sheet-header">
-                  <h3>My Order</h3>
-                  <button className="close-btn" onClick={() => setShowCart(false)}><X /></button>
-                </div>
+      <style>{`
+        .hero { height: 180px; background-size: cover; display: flex; align-items: flex-end; padding: 20px; }
+        .hero-top { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: #E8621A; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+        .hero h1 { color: white; font-size: 1.8rem; line-height: 1; }
+        .hero p { color: #AAA; font-size: 0.9rem; margin-top: 4px; }
 
-                <div className="sheet-body">
-                  <div className="order-items">
-                    {Object.entries(cart).map(([id, qty]) => {
-                      const item = Object.values(MENU_DATA).flat().find(i => i.id === parseInt(id));
-                      return (
-                        <div key={id} className="order-item">
-                          <div className="item-details">
-                            <span className={`dot ${item.veg ? 'veg' : 'non-veg'}`}></span>
-                            <span className="item-name">{item.name}</span>
-                          </div>
-                          <div className="item-actions">
-                            <div className="qty-control mini">
-                              <button onClick={() => removeFromCart(item)}><Minus size={14} /></button>
-                              <span>{qty}</span>
-                              <button onClick={() => addToCart(item)}><Plus size={14} /></button>
-                            </div>
-                            <span className="item-price">₹{item.price * qty}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="special-notes">
-                    <label>Special Instructions</label>
-                    <textarea
-                      placeholder="E.g. Less spicy, no onion..."
-                      value={specialNotes}
-                      onChange={(e) => setSpecialNotes(e.target.value)}
-                    />
-                  </div>
-
-                  {!isWaiter && (
-                    <div className="bill-summary">
-                      <div className="bill-row">
-                        <span>Subtotal</span>
-                        <span>₹{cartTotal}</span>
-                      </div>
-                      <div className="bill-row">
-                        <span>GST ({settings.gst}%)</span>
-                        <span>₹{Math.round(cartTotal * (settings.gst / 100))}</span>
-                      </div>
-                      <div className="bill-row total">
-                        <span>To Pay</span>
-                        <span>₹{cartTotal + Math.round(cartTotal * (settings.gst / 100))}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="sheet-footer">
-                  <button className="btn-place-order" onClick={placeOrder}>
-                    Place Order
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Success Modal */}
-        <AnimatePresence>
-          {lastOrder && (
-            <div className="modal-overlay success">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="success-card"
-              >
-                <div className="success-icon">
-                  <CheckCircle2 size={60} color="#2e7d32" />
-                </div>
-                <h2>Order Placed!</h2>
-                <p>Your delicious food is being prepared.</p>
-                <div className="order-number-badge">
-                  <span className="label">Order ID</span>
-                  <span className="value">{lastOrder.id}</span>
-                </div>
-                <button className="btn-primary" onClick={() => setLastOrder(null)}>
-                  Got it
-                </button>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Styles for the app (Scoped to one file) */}
-        <style>{`
-        .hero {
-          height: 260px;
-          background-size: cover;
-          background-position: center;
-          display: flex;
-          align-items: flex-end;
-          padding: 24px;
-          position: relative;
-        }
-        .hero-content {
-          width: 100%;
-        }
-        .hero-title {
-          color: white;
-          font-size: 2rem;
-          margin-bottom: 4px;
-        }
-        .hero-tagline {
-          color: var(--secondary);
-          font-weight: 500;
-          margin-bottom: 16px;
-        }
-        .hero-stats {
-          display: flex;
-          gap: 20px;
-        }
-        .stat-item {
-          display: flex;
-          flex-direction: column;
-        }
-        .stat-value {
-          color: white;
-          font-weight: 700;
-          font-size: 1.1rem;
-        }
-        .stat-label {
-          color: rgba(255, 255, 255, 0.6);
-          font-size: 0.75rem;
-        }
-        .table-search-bar {
-          padding: 16px;
-          background: white;
-          position: sticky;
-          top: 0;
-          z-index: 50;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        .top-row { display: flex; gap: 12px; align-items: center; }
-        .table-input-container {
-          background: #F8F8F8;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          padding: 0 12px;
-          border: 1px solid #EEE;
-          flex: 1;
-        }
-        .mode-toggle {
-          display: flex;
-          background: #F0F0F0;
-          padding: 4px;
-          border-radius: 10px;
-        }
-        .toggle-btn {
-          border: none;
-          padding: 6px 12px;
-          border-radius: 7px;
-          font-size: 0.75rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          color: #666;
-        }
-        .toggle-btn.active {
-          background: white;
-          color: var(--primary);
-          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .search-container {
-          background: #F8F8F8;
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          padding: 0 12px;
-          border: 1px solid #EEE;
-        }
-        .search-input {
-          border: none;
-          background: transparent;
-          padding: 12px;
-          font-size: 0.9rem;
-          width: 100%;
-          outline: none;
-        }
-        .icon-gray { color: #999; }
-        .icon-gold { color: var(--secondary); }
-        .category-nav {
-          display: flex;
-          overflow-x: auto;
-          padding: 16px;
-          gap: 12px;
-          scrollbar-width: none;
-          background: var(--bg-cream);
-        }
-        .category-nav::-webkit-scrollbar { display: none; }
-        .category-btn {
-          flex: 0 0 auto;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          background: white;
-          border: 1px solid #EEE;
-          border-radius: 50px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .category-btn.active {
-          background: var(--primary);
-          border-color: var(--primary);
-          color: white;
-          box-shadow: 0 4px 12px rgba(232, 98, 26, 0.2);
-        }
-        .cat-emoji { font-size: 1.2rem; }
-        .cat-name { font-weight: 500; font-size: 0.85rem; }
+        .sticky-header { position: sticky; top: 0; background: white; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .header-actions { display: flex; padding: 12px; gap: 10px; }
+        .table-selector { background: #F5F5F5; border-radius: 12px; display: flex; align-items: center; padding: 0 10px; flex: 0 0 80px; }
+        .table-selector input { border: none; background: transparent; width: 100%; padding: 10px 5px; font-weight: 700; outline: none; }
+        .search-pill { background: #F5F5F5; border-radius: 12px; display: flex; align-items: center; padding: 0 12px; flex: 1; }
+        .search-pill input { border: none; background: transparent; width: 100%; padding: 10px; outline: none; font-size: 0.9rem; }
         
-        .menu-list { padding: 16px; }
-        .section-title { font-size: 1.2rem; margin-bottom: 16px; color: var(--accent); }
-        .menu-grid { display: grid; gap: 16px; }
-        
-        .menu-card {
-          background: white;
-          border-radius: var(--radius);
-          padding: 16px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          box-shadow: var(--shadow);
-          border: 1px solid rgba(0,0,0,0.03);
-        }
-        .item-info { display: flex; flex-direction: column; gap: 4px; }
+        .category-scroll { display: flex; overflow-x: auto; padding: 0 12px 12px; gap: 8px; }
+        .category-scroll button { flex: 0 0 auto; padding: 8px 16px; border-radius: 50px; border: 1px solid #EEE; background: white; font-size: 0.8rem; font-weight: 600; color: #666; }
+        .category-scroll button.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .menu-section { padding: 20px 16px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-header h2 { font-size: 1.1rem; color: #333; }
+        .mode-badge { background: #F0F0F0; padding: 4px 10px; border-radius: 50px; display: flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 700; color: #666; cursor: pointer; }
+
+        .menu-card { background: white; border-radius: 16px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #F0F0F0; }
+        .item-info { display: flex; flex-direction: column; gap: 2px; }
         .dot-name { display: flex; align-items: center; gap: 8px; }
         .dot { width: 8px; height: 8px; border-radius: 50%; }
-        .dot.veg { background: var(--veg); box-shadow: 0 0 0 2px white, 0 0 0 3px var(--veg); }
-        .dot.non-veg { background: var(--non-veg); box-shadow: 0 0 0 2px white, 0 0 0 3px var(--non-veg); }
-        .item-no { font-size: 0.75rem; font-weight: 700; color: #999; background: #F0F0F0; padding: 2px 6px; border-radius: 4px; }
+        .dot.veg { background: #2e7d32; box-shadow: 0 0 0 2px white, 0 0 0 3px #2e7d32; }
+        .dot.non-veg { background: #c62828; box-shadow: 0 0 0 2px white, 0 0 0 3px #c62828; }
+        .item-no { font-size: 0.7rem; color: #999; font-weight: 700; background: #F5F5F5; padding: 2px 6px; border-radius: 4px; }
         .price-and-actions { display: flex; align-items: center; gap: 16px; }
-        .item-name { font-weight: 600; font-size: 0.95rem; color: var(--accent); }
-        .item-price { font-weight: 700; color: var(--primary); font-size: 0.95rem; }
-        
-        .qty-control {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          background: #FFF5F0;
-          border-radius: 8px;
-          padding: 4px;
-        }
-        .qty-control button {
-          background: var(--primary);
-          color: white;
-          border: none;
-          width: 28px;
-          height: 28px;
-          border-radius: 6px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-        }
-        .qty-control span { font-weight: 600; min-width: 20px; text-align: center; }
-        .btn-add {
-          background: white;
-          color: var(--primary);
-          border: 1px solid var(--primary);
-          padding: 6px 16px;
-          border-radius: 8px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-        .btn-add:hover { background: var(--primary); color: white; }
+        .item-name { font-weight: 600; font-size: 0.95rem; }
+        .item-price { color: var(--primary); font-weight: 700; font-size: 0.95rem; }
 
-        .cart-bar {
-          position: fixed;
-          bottom: 70px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: calc(100% - 32px);
-          max-width: 448px;
-          background: var(--accent);
-          border-radius: 16px;
-          padding: 16px;
-          z-index: 100;
-          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .cart-bar-content { display: flex; justify-content: space-between; align-items: center; }
-        .cart-info { display: flex; flex-direction: column; color: white; }
-        .cart-count { font-size: 0.8rem; opacity: 0.7; }
-        .cart-total { font-weight: 700; font-size: 1.1rem; }
-        .btn-view-order {
-          background: var(--primary);
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 10px;
-          font-weight: 600;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-        }
+        .qty-ctrl { display: flex; align-items: center; gap: 12px; background: #FFF5F0; border-radius: 10px; padding: 4px; }
+        .qty-ctrl button { background: var(--primary); color: white; border: none; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .qty-ctrl span { font-weight: 700; min-width: 20px; text-align: center; }
+        .btn-add { background: white; border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 0.8rem; }
 
-        .bottom-nav {
-          position: fixed;
-          bottom: 0;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 100%;
-          max-width: 480px;
-          background: white;
-          display: flex;
-          justify-content: space-around;
-          padding: 12px;
-          border-top: 1px solid #EEE;
-          z-index: 90;
-        }
-        .nav-btn {
-          background: none;
-          border: none;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-          color: #999;
-          cursor: pointer;
-        }
-        .nav-btn.active { color: var(--primary); }
-        .nav-btn span { font-size: 0.7rem; font-weight: 500; }
+        .floating-cart { position: fixed; bottom: 85px; left: 16px; right: 16px; z-index: 1000; }
+        .cart-pill { background: var(--accent); color: white; padding: 12px 20px; border-radius: 50px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .cart-badge { background: var(--primary); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
+        .cart-text { flex: 1; margin-left: 12px; display: flex; flex-direction: column; }
+        .cart-text span { font-weight: 700; font-size: 0.95rem; }
+        .cart-text small { opacity: 0.7; font-size: 0.75rem; }
 
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.5);
-          z-index: 1000;
-          display: flex;
-          align-items: flex-end;
-          justify-content: center;
-        }
-        .bottom-sheet {
-          background: white;
-          width: 100%;
-          max-width: 480px;
-          border-radius: 24px 24px 0 0;
-          padding: 24px;
-          max-height: 85vh;
-          display: flex;
-          flex-direction: column;
-        }
-        .sheet-handle {
-          width: 40px;
-          height: 4px;
-          background: #DDD;
-          border-radius: 2px;
-          margin: 0 auto 20px;
-        }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #EEE; }
+        .nav-item { border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item span { font-size: 0.65rem; font-weight: 600; }
+
+        .modal-bg { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); z-index: 2000; }
+        .sheet { position: absolute; bottom: 0; width: 100%; background: white; border-radius: 24px 24px 0 0; padding: 20px; max-height: 90vh; display: flex; flex-direction: column; }
+        .sheet-bar { width: 40px; height: 4px; background: #DDD; border-radius: 2px; margin: 0 auto 15px; }
         .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .sheet-body { overflow-y: auto; flex: 1; }
-        .order-items { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
-        .order-item { display: flex; justify-content: space-between; align-items: center; }
-        .qty-control.mini button { width: 24px; height: 24px; }
-        .special-notes { margin-bottom: 24px; }
-        .special-notes label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 0.9rem; }
-        .special-notes textarea {
-          width: 100%;
-          padding: 12px;
-          border: 1px solid #EEE;
-          border-radius: 12px;
-          height: 80px;
-          font-family: inherit;
-          resize: none;
-        }
-        .bill-summary { background: #F9F9F9; padding: 16px; border-radius: 16px; }
-        .bill-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; }
-        .bill-row.total { border-top: 1px dashed #DDD; padding-top: 8px; margin-top: 8px; font-weight: 700; font-size: 1.1rem; color: var(--accent); }
-        .btn-place-order {
-          width: 100%;
-          background: var(--primary);
-          color: white;
-          border: none;
-          padding: 16px;
-          border-radius: 14px;
-          font-weight: 700;
-          font-size: 1rem;
-          margin-top: 20px;
-          cursor: pointer;
-        }
+        .sheet-header button { background: #F5F5F5; border: none; padding: 6px; border-radius: 50%; }
+        .sheet-content { padding: 0 20px 20px; max-height: 70vh; overflow-y: auto; }
+        .sheet-table-box { background: #F9F9F9; padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; border: 1px solid #EEE; }
+        .sheet-table-box input { border: none; background: transparent; font-size: 1rem; font-weight: 700; width: 100%; outline: none; }
+        .cart-items { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; }
+        .btn-add-more { width: 100%; padding: 12px; border-radius: 12px; border: 2px dashed #DDD; background: transparent; color: #666; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; cursor: pointer; }
+        .btn-add-more:hover { border-color: var(--primary); color: var(--primary); }
+        .item-main { display: flex; align-items: center; gap: 10px; }
+        .item-ctrl { display: flex; align-items: center; gap: 12px; background: #F9F9F9; padding: 4px; border-radius: 8px; }
+        .item-ctrl button { border: none; background: #DDD; padding: 4px; border-radius: 4px; }
+        .item-price { font-weight: 700; color: #333; width: 60px; text-align: right; }
+        .sheet textarea { width: 100%; background: #F9F9F9; border: 1px solid #EEE; padding: 12px; border-radius: 12px; height: 80px; margin-bottom: 20px; font-family: inherit; }
+        .total-summary { background: #F9F9F9; padding: 16px; border-radius: 16px; margin-bottom: 20px; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; color: #666; }
+        .grand { border-top: 1px dashed #DDD; padding-top: 8px; margin-top: 8px; font-weight: 800; color: #000; font-size: 1.1rem; }
+        .btn-order { width: 100%; background: var(--primary); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 700; font-size: 1.1rem; }
 
-        .success-card {
-          background: white;
-          padding: 40px 24px;
-          border-radius: 24px;
-          text-align: center;
-          width: calc(100% - 48px);
-          max-width: 340px;
-        }
-        .success-icon { margin-bottom: 20px; }
-        .order-number-badge {
-          background: #F0F7F0;
-          padding: 16px;
-          border-radius: 16px;
-          margin: 24px 0;
-          display: flex;
-          flex-direction: column;
-        }
-        .order-number-badge .label { font-size: 0.8rem; color: #666; }
-        .order-number-badge .value { font-size: 1.5rem; font-weight: 800; color: var(--accent); }
+        .success-overlay { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: white; z-index: 3000; display: flex; align-items: center; justify-content: center; }
+        .success-modal { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .order-id-badge { background: #F0F7F0; color: #2e7d32; padding: 8px 20px; border-radius: 50px; font-weight: 800; font-size: 1.2rem; margin-bottom: 20px; }
       `}</style>
-      </div>
-    );
-  };
-
-  // --- SUB-COMPONENTS ---
-
-  const MenuCard = ({ item, isWaiter, quantity, onAdd, onRemove }) => (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="menu-card"
-    >
-      <div className="item-info">
-        <div className="dot-name">
-          <span className={`dot ${item.veg ? 'veg' : 'non-veg'}`}></span>
-          <span className="item-no">#{item.no}</span>
-          <span className="item-name">{item.name}</span>
-        </div>
-      </div>
-      <div className="price-and-actions">
-        <span className="item-price">₹{item.price}</span>
-        <div className="item-actions">
-          {quantity > 0 ? (
-            <div className="qty-control">
-              <button onClick={onRemove}><Minus size={16} /></button>
-              <span>{quantity}</span>
-              <button onClick={onAdd}><Plus size={16} /></button>
-            </div>
-          ) : (
-            <button className="btn-add" onClick={onAdd}>ADD</button>
-          )}
-        </div>
-      </div>
-    </motion.div>
+    </div>
   );
+};
 
-  const AdminLogin = ({ onLogin, onBack }) => {
-    const [user, setUser] = useState("");
-    const [pass, setPass] = useState("");
-
-    const handleSubmit = (e) => {
-      e.preventDefault();
-      if (user === "admin" && pass === "vrs2024") {
-        onLogin();
-      } else {
-        alert("Invalid credentials!");
-      }
-    };
-
-    return (
-      <div className="admin-login-screen">
-        <div className="login-header">
-          <button className="back-btn" onClick={onBack}><X /></button>
-          <ChefHat size={48} color="#E8621A" />
-          <h2>Staff Login</h2>
-        </div>
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="input-group">
-            <label>Username</label>
-            <input
-              type="text"
-              className="input-field"
-              value={user}
-              onChange={e => setUser(e.target.value)}
-            />
-          </div>
-          <div className="input-group">
-            <label>Password</label>
-            <input
-              type="password"
-              className="input-field"
-              value={pass}
-              onChange={e => setPass(e.target.value)}
-            />
-          </div>
-          <button type="submit" className="btn-primary w-full">Login to Dashboard</button>
-        </form>
-        <style>{`
-        .admin-login-screen { padding: 40px 24px; background: white; min-height: 100vh; }
-        .login-header { text-align: center; margin-bottom: 40px; position: relative; }
-        .login-header h2 { margin-top: 16px; font-size: 1.8rem; }
-        .back-btn { position: absolute; left: 0; top: 0; background: none; border: none; padding: 8px; cursor: pointer; }
-        .login-form { display: flex; flex-direction: column; gap: 20px; }
-        .input-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem; }
-        .w-full { width: 100%; margin-top: 10px; }
-      `}</style>
+const MenuCard = ({ item, isWaiter, qty, onAdd, onRemove }) => (
+  <div className="menu-card">
+    <div className="item-info">
+      <div className="dot-name">
+        <span className={`dot ${item.veg ? 'veg' : 'non-veg'}`} />
+        <span className="item-no">#{item.no}</span>
+        <span className="item-name">{item.name}</span>
       </div>
-    );
+    </div>
+    <div className="price-and-actions">
+      <span className="item-price">₹{item.price}</span>
+      <div className="item-actions">
+        {qty > 0 ? (
+          <div className="qty-ctrl">
+            <button onClick={onRemove}><Minus size={16} /></button>
+            <span>{qty}</span>
+            <button onClick={onAdd}><Plus size={16} /></button>
+          </div>
+        ) : (
+          <button className="btn-add" onClick={onAdd}>ADD</button>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const UnifiedLogin = ({ onLogin, settings }) => {
+  const [user, setUser] = useState("");
+  const [pass, setPass] = useState("");
+
+  const handleLogin = () => {
+    if (user === "admin" && pass === "vrs2024") {
+      onLogin('admin');
+    } else if (user === "waiter" && pass === "waiter") {
+      onLogin('waiter');
+    } else {
+      alert("Invalid credentials! Try 'admin'/'vrs2024' or 'waiter'/'waiter'");
+    }
   };
 
-  const AdminDashboard = ({ orders, setOrders, onLogout, onBack, menu, setMenu, settings, setSettings, API_BASE }) => {
-    const [tab, setTab] = useState("Orders");
+  return (
+    <div className="login-screen" style={{height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', padding: '20px'}}>
+      <div className="login-box" style={{background: 'white', padding: '40px 30px', borderRadius: '30px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)', width: '100%', maxWidth: '400px', textAlign: 'center'}}>
+        <ChefHat size={60} color="#E8621A" style={{marginBottom: '20px'}} />
+        <h1 style={{fontSize: '1.8rem', marginBottom: '10px'}}>{settings.name}</h1>
+        <p style={{color: '#666', marginBottom: '30px'}}>Please sign in to continue</p>
+        
+        <input 
+          placeholder="Username" 
+          value={user} 
+          onChange={e => setUser(e.target.value)} 
+          style={{width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #eee', marginBottom: '15px', outline: 'none'}} 
+        />
+        <input 
+          type="password" 
+          placeholder="Password" 
+          value={pass} 
+          onChange={e => setPass(e.target.value)} 
+          style={{width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #eee', marginBottom: '25px', outline: 'none'}} 
+        />
+        
+        <button 
+          onClick={handleLogin} 
+          className="btn-primary" 
+          style={{width: '100%', padding: '15px', borderRadius: '12px', border: 'none', background: '#E8621A', color: 'white', fontSize: '1rem', fontWeight: '700', cursor: 'pointer'}}
+        >
+          Sign In
+        </button>
+      </div>
+    </div>
+  );
+};
 
-    const updateStatus = async (orderId, newStatus) => {
-      try {
-        await fetch(`${API_BASE}/orders/${orderId}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus })
-        });
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
-      } catch (err) { alert("Failed to update status"); }
-    };
+const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, setSettings }) => {
+  const [tab, setTab] = useState("Orders");
 
-    const revenue = orders.reduce((a, b) => a + b.total, 0);
+  const updateStatus = (id, status) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+  };
 
-    return (
-      <div className="admin-dashboard">
-        <div className="dashboard-header">
-          <div className="header-top">
-            <h2>Admin Panel</h2>
-            <button className="logout-btn" onClick={onLogout}><LogOut size={20} /></button>
-          </div>
-          <div className="admin-tabs">
-            <button className={tab === 'Orders' ? 'active' : ''} onClick={() => setTab('Orders')}>Orders</button>
-            <button className={tab === 'Menu' ? 'active' : ''} onClick={() => setTab('Menu')}>Menu</button>
-            <button className={tab === 'Stats' ? 'active' : ''} onClick={() => setTab('Stats')}>Reports</button>
-            <button className={tab === 'Settings' ? 'active' : ''} onClick={() => setTab('Settings')}>Settings</button>
-          </div>
+  const [printingOrder, setPrintingOrder] = useState(null);
+
+  const handlePrint = (order) => {
+    setPrintingOrder(order);
+    setTimeout(() => {
+      window.print();
+      updateStatus(order.id, 'Billed');
+    }, 500);
+  };
+
+  return (
+    <div className="dashboard">
+      <div className="dash-header">
+        <div className="row">
+          <h2>Admin Panel</h2>
+          <button onClick={onLogout}><LogOut size={20} /></button>
         </div>
-
-        <div className="dashboard-content">
-          {tab === 'Orders' && (
-            <div className="orders-list">
-              {orders.length === 0 ? (
-                <div className="empty-state"><Clock size={48} opacity={0.2} /><p>No orders yet</p></div>
-              ) : (
-                orders.map(order => (
-                  <div key={order.id} className={`order-card status-${order.status.toLowerCase()}`}>
-                    <div className="order-card-header">
-                      <span className="order-id">{order.id}</span>
-                      <span className="order-time">{new Date(order.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span className={`status-badge ${order.status.toLowerCase()}`}>{order.status}</span>
-                    </div>
-                    <div className="order-card-body">
-                      <div className="order-meta">
-                        <div className="meta-item"><Table size={14} /> Table {order.tableNumber}</div>
-                        <div className="meta-item"><IndianRupee size={14} /> ₹{order.total}</div>
-                      </div>
-                      <div className="order-items-list">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="order-subitem">{item.quantity}x {item.name}</div>
-                        ))}
-                      </div>
-                      {order.notes && <div className="order-notes-box"><strong>Notes:</strong> {order.notes}</div>}
-                    </div>
-                    <div className="order-card-actions">
-                      {order.status === 'Pending' && (
-                        <button className="btn-confirm" onClick={() => updateStatus(order.id, 'Confirmed')}>Confirm Order</button>
-                      )}
-                      {order.status === 'Confirmed' && (
-                        <button className="btn-ready" onClick={() => updateStatus(order.id, 'Ready')}>Mark as Ready</button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-
-          {tab === 'Menu' && <MenuManagement menu={menu} setMenu={setMenu} API_BASE={API_BASE} />}
-
-          {tab === 'Stats' && (
-            <div className="stats-view">
-              <div className="stat-grid">
-                <div className="stat-card"><span className="label">Total Revenue</span><span className="value">₹{revenue}</span></div>
-                <div className="stat-card"><span className="label">Total Orders</span><span className="value">{orders.length}</span></div>
-                <div className="stat-card"><span className="label">Pending</span><span className="value">{orders.filter(o => o.status === 'Pending').length}</span></div>
-                <div className="stat-card"><span className="label">Completed</span><span className="value">{orders.filter(o => o.status === 'Ready').length}</span></div>
-              </div>
-            </div>
-          )}
-
-          {tab === 'Settings' && <SettingsModule settings={settings} setSettings={setSettings} API_BASE={API_BASE} />}
+        <div className="dash-tabs">
+          <button className={tab === 'Orders' ? 'active' : ''} onClick={() => setTab('Orders')}><ShoppingBag size={14}/> Orders</button>
+          <button className={tab === 'Menu' ? 'active' : ''} onClick={() => setTab('Menu')}><Package size={14}/> Menu</button>
+          <button className={tab === 'Stats' ? 'active' : ''} onClick={() => setTab('Stats')}><TrendingUp size={14}/> Stats</button>
+          <button className={tab === 'Settings' ? 'active' : ''} onClick={() => setTab('Settings')}><Settings size={14}/> Settings</button>
         </div>
       </div>
-    );
-  };
-
-  const MenuManagement = ({menu, setMenu, API_BASE}) => {
-  const [editingItem, setEditingItem] = useState(null);
-        const [newItem, setNewItem] = useState({name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
-
-  const handleSave = async (e) => {
-          e.preventDefault();
-        const item = editingItem || newItem;
-        const method = editingItem ? 'PUT' : 'POST';
-        const url = editingItem ? `${API_BASE}/menu/${editingItem.id}` : `${API_BASE}/menu`;
-
-        try {
-          await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(item)
-          });
-        // Refresh menu
-        const res = await fetch(`${API_BASE}/menu`);
-        setMenu(await res.json());
-        setEditingItem(null);
-        setNewItem({name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
-    } catch (err) {alert("Error saving item"); }
-  };
-
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure?")) return;
-        try {
-          await fetch(`${API_BASE}/menu/${id}`, { method: 'DELETE' });
-      setMenu(menu.filter(i => i.id !== id));
-    } catch (err) {alert("Error deleting item"); }
-  };
-
-        return (
-        <div className="menu-mgmt">
-          <form onSubmit={handleSave} className="item-form">
-            <h3>{editingItem ? 'Edit Item' : 'Add New Item'}</h3>
-            <div className="form-row">
-              <input placeholder="Name" value={editingItem ? editingItem.name : newItem.name} onChange={e => editingItem ? setEditingItem({ ...editingItem, name: e.target.value }) : setNewItem({ ...newItem, name: e.target.value })} required />
-              <input placeholder="No" value={editingItem ? editingItem.no : newItem.no} onChange={e => editingItem ? setEditingItem({ ...editingItem, no: e.target.value }) : setNewItem({ ...newItem, no: e.target.value })} required />
-            </div>
-            <div className="form-row">
-              <input type="number" placeholder="Price" value={editingItem ? editingItem.price : newItem.price} onChange={e => editingItem ? setEditingItem({ ...editingItem, price: parseInt(e.target.value) }) : setNewItem({ ...newItem, price: parseInt(e.target.value) })} required />
-              <select value={editingItem ? editingItem.category : newItem.category} onChange={e => editingItem ? setEditingItem({ ...editingItem, category: e.target.value }) : setNewItem({ ...newItem, category: e.target.value })}>
-                <option>Roti Varieties</option>
-                <option>Chicken Gravy</option>
-                <option>Veg Varieties</option>
-                <option>Veg Rice</option>
-                <option>Non-Veg Rice</option>
-              </select>
-            </div>
-            <div className="form-actions">
-              <button type="submit" className="btn-primary">{editingItem ? 'Update' : 'Add'}</button>
-              {editingItem && <button onClick={() => setEditingItem(null)}>Cancel</button>}
-            </div>
-          </form>
-
-          <div className="items-table">
-            {menu.map(item => (
-              <div key={item.id} className="item-row">
-                <div className="row-info">
-                  <strong>#{item.no}</strong> {item.name} - ₹{item.price}
-                </div>
-                <div className="row-btns">
-                  <button onClick={() => setEditingItem(item)}>Edit</button>
-                  <button onClick={() => handleDelete(item.id)} className="delete">Delete</button>
+      <div className="dash-content">
+        {tab === 'Orders' && (
+          <div className="order-list">
+            {orders.map(o => (
+              <div key={o.id} className={`order-card ${o.status.toLowerCase()}`}>
+                <div className="card-meta"><span>T{o.tableNumber}</span> <span>₹{o.total}</span></div>
+                <div className="card-items">{o.items.map((i, idx) => <div key={idx}>{i.quantity}x {i.name}</div>)}</div>
+                <div className="card-btns">
+                  {o.status === 'Pending' && <button className="btn-c" onClick={() => updateStatus(o.id, 'Confirmed')}>Confirm</button>}
+                  {o.status === 'Confirmed' && <button className="btn-r" onClick={() => updateStatus(o.id, 'Ready')}>Ready</button>}
+                  <button className="btn-p" style={{background: '#666'}} onClick={() => handlePrint(o)}>Print Bill</button>
                 </div>
               </div>
             ))}
           </div>
-          <style>{`
-        .menu-mgmt { display: flex; flex-direction: column; gap: 20px; }
-        .item-form { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .form-row { display: flex; gap: 10px; margin-bottom: 10px; }
-        .form-row input, .form-row select { flex: 1; padding: 10px; border: 1px solid #EEE; border-radius: 8px; }
-        .item-row { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 10px; border-bottom: 1px solid #EEE; }
-        .row-btns { display: flex; gap: 8px; }
-        .row-btns button { padding: 4px 8px; border-radius: 4px; border: 1px solid #EEE; cursor: pointer; }
-        .row-btns .delete { color: red; }
-      `}</style>
+        )}
+        {tab === 'Menu' && <MenuMgmt menu={menu} setMenu={setMenu} />}
+        {tab === 'Stats' && <Reports orders={orders} />}
+        {tab === 'Settings' && <SettingsEditor settings={settings} setSettings={setSettings} />}
+      </div>
+
+      {/* Printable Receipt */}
+      {printingOrder && (
+        <div className="print-only">
+          <div className="receipt-header">
+            <h2>{settings.name}</h2>
+            <p>{settings.tagline}</p>
+            <hr />
+          </div>
+          <div className="receipt-meta">
+            <p><strong>Table:</strong> {printingOrder.tableNumber}</p>
+            <p><strong>Order ID:</strong> {printingOrder.id}</p>
+            <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
+            <hr />
+          </div>
+          <table className="receipt-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {printingOrder.items.map((item, idx) => (
+                <tr key={idx}>
+                  <td>{item.name}</td>
+                  <td>{item.quantity}</td>
+                  <td>₹{item.price * item.quantity}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <hr />
+          <div className="receipt-total">
+            <div className="row"><span>Subtotal</span><span>₹{printingOrder.total}</span></div>
+            <div className="row"><span>GST ({settings.gst}%)</span><span>₹{Math.round(printingOrder.total * settings.gst / 100)}</span></div>
+            <div className="row grand"><span>Total</span><span>₹{printingOrder.total + Math.round(printingOrder.total * settings.gst / 100)}</span></div>
+          </div>
+          <div className="receipt-footer">
+            <p>Thank you! Visit Again</p>
+          </div>
         </div>
-        );
+      )}
+
+      <style>{`
+        .dashboard { min-height: 100vh; background: #F8F8F8; }
+        .dash-header { background: white; padding: 20px 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .dash-header .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .dash-tabs { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 5px; }
+        .dash-tabs button { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 12px; border: none; background: #F5F5F5; font-size: 0.8rem; font-weight: 700; color: #666; }
+        .dash-tabs button.active { background: var(--accent); color: white; }
+        
+        .dash-content { padding: 16px; padding-bottom: 100px; }
+        .order-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #DDD; }
+        .order-card.pending { border-left-color: #EAB308; }
+        .order-card.confirmed { border-left-color: #3B82F6; }
+        .order-card.ready { border-left-color: #22C55E; }
+        .card-top { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .card-top .badge { font-size: 0.6rem; font-weight: 800; background: #F0F0F0; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+        .card-meta { display: flex; gap: 15px; font-size: 0.8rem; font-weight: 700; color: #666; margin-bottom: 10px; }
+        .card-items { border-top: 1px solid #F5F5F5; padding-top: 10px; font-size: 0.85rem; margin-bottom: 15px; }
+        .card-btns { display: flex; gap: 10px; }
+        .card-btns button { flex: 1; padding: 10px; border: none; border-radius: 10px; font-weight: 700; color: white; }
+        .btn-c { background: #3B82F6; }
+        .btn-r { background: #22C55E; }
+
+        .print-only { display: none; }
+        @media print {
+          body * { visibility: hidden; }
+          .print-only, .print-only * { visibility: visible; }
+          .print-only { 
+            display: block; 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 80mm; 
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            color: black;
+          }
+          .receipt-header { text-align: center; }
+          .receipt-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+          .receipt-table th { text-align: left; border-bottom: 1px solid #000; }
+          .receipt-table td { padding: 5px 0; }
+          .receipt-total .row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+          .receipt-total .grand { font-weight: bold; border-top: 1px solid #000; padding-top: 5px; }
+          .receipt-footer { text-align: center; margin-top: 20px; font-size: 10px; }
+        }
+      `}</style>
+    </div>
+  );
 };
 
-        const SettingsModule = ({settings, setSettings, API_BASE}) => {
-  const handleSave = async (e) => {
-          e.preventDefault();
-        try {
-          await fetch(`${API_BASE}/settings`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settings)
-          });
-        alert("Settings saved!");
-    } catch (err) {alert("Error saving settings"); }
+const MenuMgmt = ({ menu, setMenu }) => {
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({ name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
+
+  const save = (e) => {
+    e.preventDefault();
+    if (editing) {
+      setMenu(prev => prev.map(i => String(i.id) === String(editing.id) ? editing : i));
+      setEditing(null);
+    } else {
+      const newItem = {
+        ...form,
+        id: Date.now().toString(),
+        price: parseInt(form.price) || 0,
+        icon: form.veg ? "🥦" : "🍗"
+      };
+      setMenu(prev => [...prev, newItem]);
+      setForm({ name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
+    }
   };
 
-        return (
-        <div className="settings-module">
-          <form onSubmit={handleSave} className="item-form">
-            <h3>General Settings</h3>
-            <div className="input-group">
-              <label>Dhaba Name</label>
-              <input className="input-field" value={settings.name} onChange={e => setSettings({ ...settings, name: e.target.value })} />
-            </div>
-            <div className="input-group">
-              <label>Tagline</label>
-              <input className="input-field" value={settings.tagline} onChange={e => setSettings({ ...settings, tagline: e.target.value })} />
-            </div>
-            <div className="input-group">
-              <label>GST (%)</label>
-              <input type="number" className="input-field" value={settings.gst} onChange={e => setSettings({ ...settings, gst: parseInt(e.target.value) })} />
-            </div>
-            <button type="submit" className="btn-primary">Save Settings</button>
-          </form>
+  const handleDelete = (id) => {
+    if (!window.confirm("Are you sure?")) return;
+    setMenu(prev => prev.filter(i => String(i.id) !== String(id)));
+  };
+
+  const categories = ["Roti Varieties", "Chicken Gravy", "Egg Varieties", "Gravy", "Veg Varieties", "Veg Rice Varieties", "Non-Veg Rice & Noodles", "Noodles"];
+
+  return (
+    <div className="menu-mgmt">
+      <form onSubmit={save} className="edit-box">
+        <h3>{editing ? 'Edit Item' : 'New Item'}</h3>
+        <div style={{display: 'flex', gap: '10px'}}>
+          <input style={{flex: 1}} placeholder="Name" value={editing ? editing.name : form.name} onChange={e => editing ? setEditing({...editing, name: e.target.value}) : setForm({...form, name: e.target.value})} required />
+          <input style={{width: '80px'}} placeholder="No" value={editing ? editing.no : form.no} onChange={e => editing ? setEditing({...editing, no: e.target.value}) : setForm({...form, no: e.target.value})} required />
         </div>
-        );
+        <div style={{display: 'flex', gap: '10px'}}>
+          <input style={{flex: 1}} type="number" placeholder="Price" value={editing ? editing.price : form.price} onChange={e => editing ? setEditing({...editing, price: parseInt(e.target.value)}) : setForm({...form, price: e.target.value})} required />
+          <select style={{flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: '#F5F5F5'}} value={editing ? editing.category : form.category} onChange={e => editing ? setEditing({...editing, category: e.target.value}) : setForm({...form, category: e.target.value})}>
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <label style={{display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', padding: '5px 0'}}>
+          <input type="checkbox" checked={editing ? editing.veg : form.veg} onChange={e => editing ? setEditing({...editing, veg: e.target.checked}) : setForm({...form, veg: e.target.checked})} />
+          Vegetarian Item
+        </label>
+        <div style={{display: 'flex', gap: '10px'}}>
+          <button type="submit" className="btn-primary" style={{flex: 1}}>{editing ? 'Update Item' : 'Add Item'}</button>
+          {editing && <button type="button" onClick={() => setEditing(null)} style={{padding: '12px', borderRadius: '10px', border: '1px solid #CCC', background: 'white'}}>Cancel</button>}
+        </div>
+      </form>
+      <div className="list">
+        {menu.map(i => (
+          <div key={i.id} className="row">
+            <div style={{display: 'flex', flexDirection: 'column'}}>
+              <strong>#{i.no} {i.name}</strong>
+              <small style={{color: '#666'}}>{i.category} • ₹{i.price}</small>
+            </div>
+            <div className="acts">
+              <button onClick={() => setEditing(i)} style={{marginRight: '8px', padding: '6px', background: '#E3F2FD', color: '#1976D2', border: 'none', borderRadius: '6px', cursor: 'pointer'}}><Edit2 size={16}/></button>
+              <button onClick={() => handleDelete(i.id)} style={{padding: '6px', background: '#FFEBEE', color: '#D32F2F', border: 'none', borderRadius: '6px', cursor: 'pointer'}}><Trash2 size={16}/></button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <style>{`
+        .edit-box { background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .edit-box input { background: #F5F5F5; border: none; padding: 12px; border-radius: 10px; font-family: inherit; }
+        .list .row { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; margin-bottom: 8px; font-size: 0.9rem; border: 1px solid #F0F0F0; }
+        .acts { display: flex; }
+      `}</style>
+    </div>
+  );
+};
+
+const Reports = ({ orders }) => (
+  <div className="stats">
+    <div className="stat-card"><span>Revenue</span><strong>₹{orders.reduce((a,b)=>a+b.total,0)}</strong></div>
+    <div className="stat-card"><span>Orders</span><strong>{orders.length}</strong></div>
+    <style>{`
+      .stat-card { background: white; padding: 30px; border-radius: 24px; text-align: center; margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
+      .stat-card strong { font-size: 2rem; color: var(--primary); }
+    `}</style>
+  </div>
+);
+
+const SettingsEditor = ({ settings, setSettings }) => {
+  const save = () => {
+    alert("Settings saved!");
+  };
+  return (
+    <div className="settings">
+      <div className="edit-box">
+        <label>Shop Name</label>
+        <input value={settings.name} onChange={e => setSettings({...settings, name: e.target.value})} className="input-field" />
+        <label>GST %</label>
+        <input type="number" value={settings.gst} onChange={e => setSettings({...settings, gst: parseInt(e.target.value) || 0})} className="input-field" />
+        <button onClick={save} className="btn-primary">Update Shop</button>
+      </div>
+    </div>
+  );
 };
 
 export default App;

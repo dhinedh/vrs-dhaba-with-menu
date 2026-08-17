@@ -4,8 +4,14 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 const app = express();
+const allowedFrontend = process.env.FRONTEND_URL;
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: (origin, callback) => {
+    if (!origin || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:') || origin === allowedFrontend) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type']
 }));

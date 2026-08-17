@@ -1,38 +1,130 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
   Minus, 
   X, 
   CheckCircle2, 
-  LayoutDashboard, 
   LogOut, 
-  IndianRupee,
-  Clock,
-  Table,
-  UtensilsCrossed,
-  ChefHat,
-  Search,
-  ArrowRight,
-  Settings,
-  TrendingUp,
-  Package,
-  Trash2,
-  Edit2,
-  ChevronRight,
-  User,
-  ShoppingBag
+  Clock, 
+  Table, 
+  UtensilsCrossed, 
+  ChefHat, 
+  Search, 
+  ArrowRight, 
+  Settings, 
+  TrendingUp, 
+  Package, 
+  Trash2, 
+  Edit2, 
+  ShoppingBag 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import heroBg from './assets/hero-bg.png';
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api";
+const INITIAL_MENU = [
+  { id: "1", no: "101", name: "Roti", price: 15, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "2", no: "102", name: "Butter Roti", price: 20, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "3", no: "103", name: "Butter Naan", price: 50, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "4", no: "104", name: "Garlic Roti", price: 30, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "5", no: "105", name: "Plain Naan", price: 40, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "6", no: "106", name: "Garlic Naan", price: 80, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "7", no: "107", name: "Half Naan", price: 25, veg: true, icon: "🫓", category: "Roti Varieties" },
+  { id: "8", no: "201", name: "Chicken Masala", price: 150, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "9", no: "202", name: "Pepper Chicken", price: 180, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "10", no: "203", name: "Ginger Chicken", price: 170, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "11", no: "204", name: "Garlic Chicken", price: 190, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "12", no: "205", name: "Chettinad Chicken", price: 200, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "13", no: "206", name: "Mughlai Chicken", price: 230, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "14", no: "207", name: "Punjabi Chicken", price: 220, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "15", no: "208", name: "Chilli Chicken", price: 200, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "16", no: "209", name: "Butter Chicken", price: 210, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "17", no: "210", name: "Andhra Chicken", price: 230, veg: false, icon: "🍗", category: "Chicken Gravy" },
+  { id: "18", no: "301", name: "Egg Podimas", price: 50, veg: false, icon: "🍳", category: "Egg Varieties" },
+  { id: "19", no: "302", name: "Egg Keema", price: 110, veg: false, icon: "🍳", category: "Egg Varieties" },
+  { id: "20", no: "401", name: "Mutton Masala", price: 250, veg: false, icon: "🍲", category: "Gravy" },
+  { id: "21", no: "402", name: "Kadai Masala", price: 170, veg: false, icon: "🍲", category: "Gravy" },
+  { id: "22", no: "403", name: "Prawn Masala", price: 250, veg: false, icon: "🍤", category: "Gravy" },
+  { id: "23", no: "404", name: "Squid Masala", price: 250, veg: false, icon: "🦑", category: "Gravy" },
+  { id: "24", no: "405", name: "Naatu Kozhi", price: 220, veg: false, icon: "🍲", category: "Gravy" },
+  { id: "25", no: "501", name: "Dal", price: 100, veg: true, icon: "🥣", category: "Veg Varieties" },
+  { id: "26", no: "502", name: "Dal Tadka", price: 130, veg: true, icon: "🥣", category: "Veg Varieties" },
+  { id: "27", no: "503", name: "Dal Makhani", price: 150, veg: true, icon: "🥣", category: "Veg Varieties" },
+  { id: "28", no: "504", name: "Channa Masala", price: 100, veg: true, icon: "🥣", category: "Veg Varieties" },
+  { id: "29", no: "505", name: "Paneer Butter Masala", price: 170, veg: true, icon: "🧀", category: "Veg Varieties" },
+  { id: "30", no: "506", name: "Paneer Masala", price: 170, veg: true, icon: "🧀", category: "Veg Varieties" },
+  { id: "31", no: "507", name: "Mushroom Masala", price: 160, veg: true, icon: "🍄", category: "Veg Varieties" },
+  { id: "32", no: "508", name: "Gobi Masala", price: 150, veg: true, icon: "🥦", category: "Veg Varieties" },
+  { id: "33", no: "601", name: "Channa Rice", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
+  { id: "34", no: "602", name: "Jeera Rice", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
+  { id: "35", no: "603", name: "Paneer Rice", price: 170, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
+  { id: "36", no: "604", name: "Mushroom Rice", price: 160, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
+  { id: "37", no: "605", name: "Special Thayir Sadham", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
+  { id: "38", no: "701", name: "Chicken Rice", price: 120, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "39", no: "702", name: "Dhaba Chicken Rice", price: 130, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "40", no: "703", name: "Kadai Rice", price: 170, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "41", no: "704", name: "Mutton Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "42", no: "705", name: "Prawn Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "43", no: "706", name: "Squid Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "44", no: "707", name: "Naatu Kozhi Rice", price: 220, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
+  { id: "45", no: "708", name: "Egg Rice", price: 110, veg: false, icon: "🍳", category: "Non-Veg Rice & Noodles" },
+  { id: "46", no: "709", name: "Chicken Noodles", price: 120, veg: false, icon: "🍜", category: "Non-Veg Rice & Noodles" },
+  { id: "47", no: "710", name: "Egg Noodles", price: 110, veg: false, icon: "🍜", category: "Non-Veg Rice & Noodles" },
+  { id: "48", no: "801", name: "Gobi Noodles", price: 150, veg: true, icon: "🍜", category: "Noodles" },
+  { id: "49", no: "802", name: "Veg Noodles", price: 100, veg: true, icon: "🍜", category: "Noodles" }
+];
+
+const INITIAL_SETTINGS = {
+  name: "VRS Garden Dhaba",
+  tagline: "Delicious Taste, Affordable Price",
+  gst: 5
+};
+
+const INITIAL_ORDERS = [
+  {
+    id: "ORD-307",
+    tableNumber: "5",
+    items: [
+      { id: "3", no: "103", name: "Butter Naan", price: 50, veg: true, icon: "🫓", category: "Roti Varieties", quantity: 1 }
+    ],
+    total: 50,
+    notes: "",
+    status: "Ready",
+    timestamp: "2026-04-21T13:12:24.952Z"
+  }
+];
 
 const App = () => {
-  const [userRole, setUserRole] = useState(null); // 'admin', 'waiter', or null
+  const [userRole, setUserRole] = useState(null); // 'admin', 'waiter', 'customer', or null
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [menu, setMenu] = useState([]);
-  const [orders, setOrders] = useState([]);
-  const [settings, setSettings] = useState({ name: "VRS Garden Dhaba", tagline: "Fresh & Tasty", gst: 5 });
+  
+  // LocalStorage state initialization
+  const [menu, setMenuState] = useState(() => {
+    const saved = localStorage.getItem("vrs_menu");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem("vrs_menu", JSON.stringify(INITIAL_MENU));
+    return INITIAL_MENU;
+  });
+
+  const [orders, setOrdersState] = useState(() => {
+    const saved = localStorage.getItem("vrs_orders");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem("vrs_orders", JSON.stringify(INITIAL_ORDERS));
+    return INITIAL_ORDERS;
+  });
+
+  const [settings, setSettingsState] = useState(() => {
+    const saved = localStorage.getItem("vrs_settings");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem("vrs_settings", JSON.stringify(INITIAL_SETTINGS));
+    return INITIAL_SETTINGS;
+  });
+
   const [cart, setCart] = useState({});
   const [tableNumber, setTableNumber] = useState("");
   const [activeCategory, setActiveCategory] = useState("");
@@ -40,8 +132,44 @@ const App = () => {
   const [lastOrder, setLastOrder] = useState(null);
   const [specialNotes, setSpecialNotes] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [waiterTab, setWaiterTab] = useState("Menu"); // "Menu" or "Orders"
+  const [waiterTab, setWaiterTab] = useState("Menu");
   const [editingOrderId, setEditingOrderId] = useState(null);
+
+  // Helper sync functions
+  const setMenu = (newMenu) => {
+    setMenuState(prev => {
+      const value = typeof newMenu === 'function' ? newMenu(prev) : newMenu;
+      localStorage.setItem("vrs_menu", JSON.stringify(value));
+      return value;
+    });
+  };
+
+  const setOrders = (newOrders) => {
+    setOrdersState(prev => {
+      const value = typeof newOrders === 'function' ? newOrders(prev) : newOrders;
+      localStorage.setItem("vrs_orders", JSON.stringify(value));
+      return value;
+    });
+  };
+
+  const setSettings = (newSettings) => {
+    setSettingsState(prev => {
+      const value = typeof newSettings === 'function' ? newSettings(prev) : newSettings;
+      localStorage.setItem("vrs_settings", JSON.stringify(value));
+      return value;
+    });
+  };
+
+  // Sync across tabs in real-time
+  useEffect(() => {
+    const handleStorage = (e) => {
+      if (e.key === "vrs_menu" && e.newValue) setMenuState(JSON.parse(e.newValue));
+      if (e.key === "vrs_orders" && e.newValue) setOrdersState(JSON.parse(e.newValue));
+      if (e.key === "vrs_settings" && e.newValue) setSettingsState(JSON.parse(e.newValue));
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const categories = useMemo(() => {
     const cats = [...new Set(menu.map(item => item.category))];
@@ -49,9 +177,6 @@ const App = () => {
   }, [menu]);
 
   useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchOrders, 5000);
-    
     // Check for Customer Mode (e.g. ?table=5)
     const params = new URLSearchParams(window.location.search);
     const tableParam = params.get("table");
@@ -68,8 +193,6 @@ const App = () => {
         setUserRole(savedRole);
       }
     }
-
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -78,133 +201,99 @@ const App = () => {
     }
   }, [categories]);
 
-  const fetchData = async () => {
-    try {
-      const [menuRes, settingsRes] = await Promise.all([
-        fetch(`${API_BASE}/menu`),
-        fetch(`${API_BASE}/settings`)
-      ]);
-      setMenu(await menuRes.json());
-      setSettings(await settingsRes.json());
-      fetchOrders();
-    } catch (err) { console.error("Fetch error:", err); }
-  };
-
-  const fetchOrders = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/orders`);
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setOrders(data.reverse());
-      } else {
-        setOrders([]);
-      }
-    } catch (err) { console.error("Order error:", err); }
-  };
-
   const filteredMenu = useMemo(() => {
     const base = searchQuery ? menu : menu.filter(i => i.category === activeCategory);
     if (!searchQuery) return base;
     return menu.filter(item => 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      item.no.includes(searchQuery)
+      String(item.no).includes(searchQuery)
     );
   }, [activeCategory, searchQuery, menu]);
 
   const cartTotal = useMemo(() => {
     return Object.entries(cart).reduce((total, [id, qty]) => {
-      const item = menu.find(i => i.id === id);
+      const item = menu.find(i => String(i.id) === String(id));
       return total + (item ? item.price * qty : 0);
     }, 0);
   }, [cart, menu]);
 
   const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
 
-  const placeOrder = async () => {
+  const placeOrder = () => {
     if (!tableNumber) { alert("Please enter table number!"); return; }
 
     const itemsArray = Object.entries(cart)
       .map(([id, qty]) => {
-        const item = menu.find(i => i.id === id);
+        const item = menu.find(i => String(i.id) === String(id));
         return item ? { ...item, quantity: qty } : null;
       })
       .filter(item => item !== null);
 
+    if (itemsArray.length === 0) return;
+
     const total = itemsArray.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-    try {
-      if (editingOrderId) {
-        // Replace existing order
-        const updatedOrder = {
-          id: editingOrderId,
+    let updatedOrders = [...orders];
+    let createdOrUpdatedOrder = null;
+
+    if (editingOrderId) {
+      createdOrUpdatedOrder = {
+        id: editingOrderId,
+        tableNumber: tableNumber.toString(),
+        items: itemsArray,
+        total: total,
+        notes: specialNotes,
+        status: 'Pending',
+        timestamp: new Date().toISOString()
+      };
+      updatedOrders = updatedOrders.map(o => o.id === editingOrderId ? createdOrUpdatedOrder : o);
+      setEditingOrderId(null);
+    } else {
+      const activeOrderIndex = updatedOrders.findIndex(o => o.tableNumber.toString() === tableNumber.toString() && o.status !== 'Billed');
+
+      if (activeOrderIndex !== -1) {
+        const activeOrder = updatedOrders[activeOrderIndex];
+        const mergedItems = [...activeOrder.items];
+        itemsArray.forEach(newItem => {
+          const existing = mergedItems.find(i => String(i.id) === String(newItem.id));
+          if (existing) {
+            existing.quantity += newItem.quantity;
+          } else {
+            mergedItems.push(newItem);
+          }
+        });
+
+        const newTotal = mergedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+        createdOrUpdatedOrder = {
+          ...activeOrder,
+          items: mergedItems,
+          total: newTotal,
+          notes: activeOrder.notes ? activeOrder.notes + (specialNotes ? " | " + specialNotes : "") : specialNotes,
+          status: 'Pending',
+          timestamp: new Date().toISOString()
+        };
+
+        updatedOrders[activeOrderIndex] = createdOrUpdatedOrder;
+      } else {
+        createdOrUpdatedOrder = {
+          id: "ORD-" + Math.floor(100 + Math.random() * 900),
           tableNumber: tableNumber.toString(),
           items: itemsArray,
           total: total,
           notes: specialNotes,
-          status: 'Pending'
+          status: "Pending",
+          timestamp: new Date().toISOString()
         };
-
-        await fetch(`${API_BASE}/orders/${editingOrderId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedOrder)
-        });
-        setLastOrder(updatedOrder);
-        setEditingOrderId(null);
-      } else {
-        // Standard flow: Check if table has an active order to merge with
-        const activeOrder = orders.find(o => o.tableNumber.toString() === tableNumber.toString() && o.status !== 'Billed');
-        
-        if (activeOrder) {
-          const mergedItems = [...activeOrder.items];
-          itemsArray.forEach(newItem => {
-            const existing = mergedItems.find(i => i.id === newItem.id);
-            if (existing) {
-              existing.quantity += newItem.quantity;
-            } else {
-              mergedItems.push(newItem);
-            }
-          });
-          
-          const newTotal = mergedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-          
-          const updatedOrder = {
-            ...activeOrder,
-            items: mergedItems,
-            total: newTotal,
-            notes: activeOrder.notes ? activeOrder.notes + (specialNotes ? " | " + specialNotes : "") : specialNotes,
-            status: 'Pending'
-          };
-
-          await fetch(`${API_BASE}/orders/${activeOrder.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedOrder)
-          });
-          setLastOrder(updatedOrder);
-        } else {
-          // New Order
-          const orderData = {
-            tableNumber: tableNumber.toString(),
-            items: itemsArray,
-            total: total,
-            notes: specialNotes,
-            status: "Pending"
-          };
-
-          const res = await fetch(`${API_BASE}/orders`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(orderData)
-          });
-          setLastOrder(await res.json());
-        }
+        updatedOrders = [createdOrUpdatedOrder, ...updatedOrders];
       }
-      setCart({});
-      setShowCart(false);
-      setSpecialNotes("");
-      fetchOrders();
-    } catch (err) { alert("Order failed!"); }
+    }
+
+    setOrders(updatedOrders);
+    setLastOrder(createdOrUpdatedOrder);
+    setCart({});
+    setShowCart(false);
+    setSpecialNotes("");
   };
 
   if (!isLoggedIn) {
@@ -229,7 +318,6 @@ const App = () => {
           }} 
           menu={menu} setMenu={setMenu}
           settings={settings} setSettings={setSettings}
-          API_BASE={API_BASE}
         />
       </div>
     );
@@ -239,7 +327,7 @@ const App = () => {
 
   return (
     <div className="app-container">
-      {/* Premium Hero */}
+      {/* Hero */}
       <div className="hero" style={{ backgroundImage: `linear-gradient(to bottom, rgba(26, 18, 8, 0.4), #1A1208), url(${heroBg})` }}>
         <div className="hero-content">
           <div className="hero-top">
@@ -399,8 +487,8 @@ const App = () => {
 
                 <div className="cart-items">
                   {Object.entries(cart).map(([id, qty]) => {
-                    const item = menu.find(i => i.id === id);
-                    if (!item) return null; // Skip if item not found
+                    const item = menu.find(i => String(i.id) === String(id));
+                    if (!item) return null;
                     return (
                       <div key={id} className="cart-item">
                         <div className="item-main">
@@ -610,11 +698,10 @@ const UnifiedLogin = ({ onLogin, settings }) => {
   );
 };
 
-const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, setSettings, API_BASE }) => {
+const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, setSettings }) => {
   const [tab, setTab] = useState("Orders");
 
-  const updateStatus = async (id, status) => {
-    await fetch(`${API_BASE}/orders/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status })});
+  const updateStatus = (id, status) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
   };
 
@@ -658,12 +745,12 @@ const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, 
             ))}
           </div>
         )}
-        {tab === 'Menu' && <MenuMgmt menu={menu} setMenu={setMenu} API_BASE={API_BASE} />}
+        {tab === 'Menu' && <MenuMgmt menu={menu} setMenu={setMenu} />}
         {tab === 'Stats' && <Reports orders={orders} />}
-        {tab === 'Settings' && <SettingsEditor settings={settings} setSettings={setSettings} API_BASE={API_BASE} />}
+        {tab === 'Settings' && <SettingsEditor settings={settings} setSettings={setSettings} />}
       </div>
 
-      {/* Hidden Printable Receipt */}
+      {/* Printable Receipt */}
       {printingOrder && (
         <div className="print-only">
           <div className="receipt-header">
@@ -727,63 +814,60 @@ const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, 
         .card-btns { display: flex; gap: 10px; }
         .card-btns button { flex: 1; padding: 10px; border: none; border-radius: 10px; font-weight: 700; color: white; }
         .btn-c { background: #3B82F6; }
-         .btn-r { background: #22C55E; }
+        .btn-r { background: #22C55E; }
 
-         /* Printing Styles */
-         .print-only { display: none; }
-         @media print {
-           body * { visibility: hidden; }
-           .print-only, .print-only * { visibility: visible; }
-           .print-only { 
-             display: block; 
-             position: absolute; 
-             left: 0; 
-             top: 0; 
-             width: 80mm; 
-             padding: 10px;
-             font-family: 'Courier New', Courier, monospace;
-             font-size: 12px;
-             color: black;
-           }
-           .receipt-header { text-align: center; }
-           .receipt-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-           .receipt-table th { text-align: left; border-bottom: 1px solid #000; }
-           .receipt-table td { padding: 5px 0; }
-           .receipt-total .row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-           .receipt-total .grand { font-weight: bold; border-top: 1px solid #000; padding-top: 5px; }
-           .receipt-footer { text-align: center; margin-top: 20px; font-size: 10px; }
-         }
-       `}</style>
+        .print-only { display: none; }
+        @media print {
+          body * { visibility: hidden; }
+          .print-only, .print-only * { visibility: visible; }
+          .print-only { 
+            display: block; 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 80mm; 
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            color: black;
+          }
+          .receipt-header { text-align: center; }
+          .receipt-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+          .receipt-table th { text-align: left; border-bottom: 1px solid #000; }
+          .receipt-table td { padding: 5px 0; }
+          .receipt-total .row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+          .receipt-total .grand { font-weight: bold; border-top: 1px solid #000; padding-top: 5px; }
+          .receipt-footer { text-align: center; margin-top: 20px; font-size: 10px; }
+        }
+      `}</style>
     </div>
   );
 };
 
-const MenuMgmt = ({ menu, setMenu, API_BASE }) => {
+const MenuMgmt = ({ menu, setMenu }) => {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
 
-  const save = async (e) => {
+  const save = (e) => {
     e.preventDefault();
-    const item = editing || form;
-    const method = editing ? 'PUT' : 'POST';
-    const url = editing ? `${API_BASE}/menu/${item.id}` : `${API_BASE}/menu`;
-    
-    await fetch(url, { 
-      method, 
-      headers: { 'Content-Type': 'application/json' }, 
-      body: JSON.stringify(item)
-    });
-    
-    const res = await fetch(`${API_BASE}/menu`);
-    setMenu(await res.json());
-    setEditing(null);
-    setForm({ name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
+    if (editing) {
+      setMenu(prev => prev.map(i => String(i.id) === String(editing.id) ? editing : i));
+      setEditing(null);
+    } else {
+      const newItem = {
+        ...form,
+        id: Date.now().toString(),
+        price: parseInt(form.price) || 0,
+        icon: form.veg ? "🥦" : "🍗"
+      };
+      setMenu(prev => [...prev, newItem]);
+      setForm({ name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
+    }
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     if (!window.confirm("Are you sure?")) return;
-    await fetch(`${API_BASE}/menu/${id}`, { method: 'DELETE' });
-    setMenu(menu.filter(i => i.id !== id));
+    setMenu(prev => prev.filter(i => String(i.id) !== String(id)));
   };
 
   const categories = ["Roti Varieties", "Chicken Gravy", "Egg Varieties", "Gravy", "Veg Varieties", "Veg Rice Varieties", "Non-Veg Rice & Noodles", "Noodles"];
@@ -797,7 +881,7 @@ const MenuMgmt = ({ menu, setMenu, API_BASE }) => {
           <input style={{width: '80px'}} placeholder="No" value={editing ? editing.no : form.no} onChange={e => editing ? setEditing({...editing, no: e.target.value}) : setForm({...form, no: e.target.value})} required />
         </div>
         <div style={{display: 'flex', gap: '10px'}}>
-          <input style={{flex: 1}} type="number" placeholder="Price" value={editing ? editing.price : form.price} onChange={e => editing ? setEditing({...editing, price: parseInt(e.target.value)}) : setForm({...form, price: parseInt(e.target.value)})} required />
+          <input style={{flex: 1}} type="number" placeholder="Price" value={editing ? editing.price : form.price} onChange={e => editing ? setEditing({...editing, price: parseInt(e.target.value)}) : setForm({...form, price: e.target.value})} required />
           <select style={{flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: '#F5F5F5'}} value={editing ? editing.category : form.category} onChange={e => editing ? setEditing({...editing, category: e.target.value}) : setForm({...form, category: e.target.value})}>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -846,10 +930,9 @@ const Reports = ({ orders }) => (
   </div>
 );
 
-const SettingsEditor = ({ settings, setSettings, API_BASE }) => {
-  const save = async () => {
-    await fetch(`${API_BASE}/settings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings)});
-    alert("Saved!");
+const SettingsEditor = ({ settings, setSettings }) => {
+  const save = () => {
+    alert("Settings saved!");
   };
   return (
     <div className="settings">
@@ -857,7 +940,7 @@ const SettingsEditor = ({ settings, setSettings, API_BASE }) => {
         <label>Shop Name</label>
         <input value={settings.name} onChange={e => setSettings({...settings, name: e.target.value})} className="input-field" />
         <label>GST %</label>
-        <input type="number" value={settings.gst} onChange={e => setSettings({...settings, gst: parseInt(e.target.value)})} className="input-field" />
+        <input type="number" value={settings.gst} onChange={e => setSettings({...settings, gst: parseInt(e.target.value) || 0})} className="input-field" />
         <button onClick={save} className="btn-primary">Update Shop</button>
       </div>
     </div>
