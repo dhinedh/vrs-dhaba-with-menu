@@ -845,74 +845,148 @@ const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, 
 };
 
 const MenuMgmt = ({ menu, setMenu }) => {
-  const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
-
-  const save = (e) => {
-    e.preventDefault();
-    if (editing) {
-      setMenu(prev => prev.map(i => String(i.id) === String(editing.id) ? editing : i));
-      setEditing(null);
-    } else {
-      const newItem = {
-        ...form,
-        id: Date.now().toString(),
-        price: parseInt(form.price) || 0,
-        icon: form.veg ? "🥦" : "🍗"
-      };
-      setMenu(prev => [...prev, newItem]);
-      setForm({ name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
-    }
-  };
-
-  const handleDelete = (id) => {
-    if (!window.confirm("Are you sure?")) return;
-    setMenu(prev => prev.filter(i => String(i.id) !== String(id)));
-  };
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({ id: "", name: "", price: "", category: "", veg: true, no: "" });
+  const [newItemForm, setNewItemForm] = useState({ name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
 
   const categories = ["Roti Varieties", "Chicken Gravy", "Egg Varieties", "Gravy", "Veg Varieties", "Veg Rice Varieties", "Non-Veg Rice & Noodles", "Noodles"];
 
+  const handleAddNew = (e) => {
+    e.preventDefault();
+    const newItem = {
+      ...newItemForm,
+      id: Date.now().toString(),
+      price: parseInt(newItemForm.price) || 0,
+      icon: newItemForm.veg ? "🥦" : "🍗"
+    };
+    setMenu(prev => [...prev, newItem]);
+    setNewItemForm({ name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
+  };
+
+  const startEdit = (item) => {
+    setEditingId(item.id);
+    setEditForm({ ...item });
+  };
+
+  const saveEdit = (id) => {
+    setMenu(prev => prev.map(i => String(i.id) === String(id) ? { ...editForm, price: parseInt(editForm.price) || 0 } : i));
+    setEditingId(null);
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+
+  const handleDelete = (id) => {
+    if (!window.confirm("Are you sure you want to delete this menu item?")) return;
+    setMenu(prev => prev.filter(i => String(i.id) !== String(id)));
+  };
+
   return (
     <div className="menu-mgmt">
-      <form onSubmit={save} className="edit-box">
-        <h3>{editing ? 'Edit Item' : 'New Item'}</h3>
+      <form onSubmit={handleAddNew} className="edit-box">
+        <h3>Add New Menu Item</h3>
         <div style={{display: 'flex', gap: '10px'}}>
-          <input style={{flex: 1}} placeholder="Name" value={editing ? editing.name : form.name} onChange={e => editing ? setEditing({...editing, name: e.target.value}) : setForm({...form, name: e.target.value})} required />
-          <input style={{width: '80px'}} placeholder="No" value={editing ? editing.no : form.no} onChange={e => editing ? setEditing({...editing, no: e.target.value}) : setForm({...form, no: e.target.value})} required />
+          <input placeholder="Name" value={newItemForm.name} onChange={e => setNewItemForm({...newItemForm, name: e.target.value})} required />
+          <input style={{width: '80px'}} placeholder="No" value={newItemForm.no} onChange={e => setNewItemForm({...newItemForm, no: e.target.value})} required />
         </div>
         <div style={{display: 'flex', gap: '10px'}}>
-          <input style={{flex: 1}} type="number" placeholder="Price" value={editing ? editing.price : form.price} onChange={e => editing ? setEditing({...editing, price: parseInt(e.target.value)}) : setForm({...form, price: e.target.value})} required />
-          <select style={{flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: '#F5F5F5'}} value={editing ? editing.category : form.category} onChange={e => editing ? setEditing({...editing, category: e.target.value}) : setForm({...form, category: e.target.value})}>
+          <input style={{flex: 1}} type="number" placeholder="Price" value={newItemForm.price} onChange={e => setNewItemForm({...newItemForm, price: e.target.value})} required />
+          <select style={{flex: 1, padding: '12px', borderRadius: '10px', border: 'none', background: '#F5F5F5'}} value={newItemForm.category} onChange={e => setNewItemForm({...newItemForm, category: e.target.value})}>
             {categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <label style={{display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', padding: '5px 0'}}>
-          <input type="checkbox" checked={editing ? editing.veg : form.veg} onChange={e => editing ? setEditing({...editing, veg: e.target.checked}) : setForm({...form, veg: e.target.checked})} />
+          <input type="checkbox" checked={newItemForm.veg} onChange={e => setNewItemForm({...newItemForm, veg: e.target.checked})} />
           Vegetarian Item
         </label>
-        <div style={{display: 'flex', gap: '10px'}}>
-          <button type="submit" className="btn-primary" style={{flex: 1}}>{editing ? 'Update Item' : 'Add Item'}</button>
-          {editing && <button type="button" onClick={() => setEditing(null)} style={{padding: '12px', borderRadius: '10px', border: '1px solid #CCC', background: 'white'}}>Cancel</button>}
-        </div>
+        <button type="submit" className="btn-primary" style={{width: '100%', marginTop: '5px'}}>+ Add Menu Item</button>
       </form>
+
       <div className="list">
-        {menu.map(i => (
-          <div key={i.id} className="row">
-            <div style={{display: 'flex', flexDirection: 'column'}}>
-              <strong>#{i.no} {i.name}</strong>
-              <small style={{color: '#666'}}>{i.category} • ₹{i.price}</small>
+        {menu.map(i => {
+          const isEditingThis = String(editingId) === String(i.id);
+          
+          if (isEditingThis) {
+            return (
+              <div key={i.id} className="row editing-row" style={{flexDirection: 'column', alignItems: 'stretch', gap: '10px', background: '#FFF9F5', border: '2px solid #E8621A', padding: '15px', borderRadius: '14px'}}>
+                <div style={{fontWeight: '700', color: '#E8621A', fontSize: '0.9rem'}}>Editing #{i.no} {i.name}</div>
+                <div style={{display: 'flex', gap: '8px'}}>
+                  <input 
+                    style={{flex: 2, padding: '8px 12px', borderRadius: '8px', border: '1px solid #CCC'}} 
+                    placeholder="Name" 
+                    value={editForm.name} 
+                    onChange={e => setEditForm({ ...editForm, name: e.target.value })} 
+                  />
+                  <input 
+                    style={{width: '70px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CCC'}} 
+                    placeholder="No" 
+                    value={editForm.no} 
+                    onChange={e => setEditForm({ ...editForm, no: e.target.value })} 
+                  />
+                  <input 
+                    style={{width: '90px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CCC'}} 
+                    type="number" 
+                    placeholder="Price" 
+                    value={editForm.price} 
+                    onChange={e => setEditForm({ ...editForm, price: e.target.value })} 
+                  />
+                </div>
+                <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+                  <select 
+                    style={{flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #CCC', background: 'white'}} 
+                    value={editForm.category} 
+                    onChange={e => setEditForm({ ...editForm, category: e.target.value })}
+                  >
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <label style={{display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.85rem', whiteSpace: 'nowrap'}}>
+                    <input 
+                      type="checkbox" 
+                      checked={editForm.veg} 
+                      onChange={e => setEditForm({ ...editForm, veg: e.target.checked })} 
+                    />
+                    Veg
+                  </label>
+                </div>
+                <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '5px'}}>
+                  <button 
+                    type="button"
+                    onClick={() => saveEdit(i.id)} 
+                    style={{padding: '8px 16px', background: '#2e7d32', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer'}}
+                  >
+                    Save Changes
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={cancelEdit} 
+                    style={{padding: '8px 16px', background: '#777', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer'}}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div key={i.id} className="row">
+              <div style={{display: 'flex', flexDirection: 'column'}}>
+                <strong>#{i.no} {i.name}</strong>
+                <small style={{color: '#666'}}>{i.category} • ₹{i.price}</small>
+              </div>
+              <div className="acts">
+                <button onClick={() => startEdit(i)} title="Edit item inline" style={{marginRight: '8px', padding: '6px 10px', background: '#E3F2FD', color: '#1976D2', border: 'none', borderRadius: '6px', cursor: 'pointer'}}><Edit2 size={16}/></button>
+                <button onClick={() => handleDelete(i.id)} title="Delete item" style={{padding: '6px 10px', background: '#FFEBEE', color: '#D32F2F', border: 'none', borderRadius: '6px', cursor: 'pointer'}}><Trash2 size={16}/></button>
+              </div>
             </div>
-            <div className="acts">
-              <button onClick={() => setEditing(i)} style={{marginRight: '8px', padding: '6px', background: '#E3F2FD', color: '#1976D2', border: 'none', borderRadius: '6px', cursor: 'pointer'}}><Edit2 size={16}/></button>
-              <button onClick={() => handleDelete(i.id)} style={{padding: '6px', background: '#FFEBEE', color: '#D32F2F', border: 'none', borderRadius: '6px', cursor: 'pointer'}}><Trash2 size={16}/></button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <style>{`
         .edit-box { background: white; padding: 20px; border-radius: 20px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
         .edit-box input { background: #F5F5F5; border: none; padding: 12px; border-radius: 10px; font-family: inherit; }
-        .list .row { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; margin-bottom: 8px; font-size: 0.9rem; border: 1px solid #F0F0F0; }
+        .list .row { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 12px; margin-bottom: 8px; font-size: 0.9rem; border: 1px solid #F0F0F0; transition: all 0.2s; }
         .acts { display: flex; }
       `}</style>
     </div>
