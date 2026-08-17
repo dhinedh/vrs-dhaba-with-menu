@@ -16,10 +16,34 @@ import {
   Package, 
   Trash2, 
   Edit2, 
-  ShoppingBag 
+  ShoppingBag,
+  Users,
+  MessageSquare,
+  Tag as TagIcon,
+  DollarSign,
+  Printer,
+  Send,
+  CreditCard,
+  Percent,
+  Check,
+  Box,
+  QrCode,
+  Bell,
+  FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import heroBg from './assets/hero-bg.png';
+
+// Modular Feature Components
+import { CustomerCRM } from './components/CustomerCRM';
+import { CustomerCommunication } from './components/CustomerCommunication';
+import { OffersEngine, INITIAL_OFFERS } from './components/OffersEngine';
+import { LiveTableOverview } from './components/LiveTableOverview';
+import { ReportsAnalytics } from './components/ReportsAnalytics';
+import { ExpenseTracker, INITIAL_EXPENSES } from './components/ExpenseTracker';
+import { TakeawayManagement } from './components/TakeawayManagement';
+import { QRTableGenerator } from './components/QRTableGenerator';
+import { CustomerAssistance } from './components/CustomerAssistance';
 
 const INITIAL_MENU = [
   { id: "1", no: "101", name: "Roti", price: 15, veg: true, icon: "🫓", category: "Roti Varieties" },
@@ -76,28 +100,43 @@ const INITIAL_MENU = [
 const INITIAL_SETTINGS = {
   name: "VRS Garden Dhaba",
   tagline: "Delicious Taste, Affordable Price",
-  gst: 5
+  gst: 5,
+  packagingCharge: 15,
+  orderingMode: "SELF_ORDER" // 'SELF_ORDER' or 'MENU_ONLY'
 };
 
 const INITIAL_ORDERS = [
   {
     id: "ORD-307",
     tableNumber: "5",
+    tokenNumber: "",
     items: [
-      { id: "3", no: "103", name: "Butter Naan", price: 50, veg: true, icon: "🫓", category: "Roti Varieties", quantity: 1 }
+      { id: "3", no: "103", name: "Butter Naan", price: 50, veg: true, icon: "🫓", category: "Roti Varieties", quantity: 2 },
+      { id: "8", no: "201", name: "Chicken Masala", price: 150, veg: false, icon: "🍗", category: "Chicken Gravy", quantity: 1 }
     ],
-    total: 50,
-    notes: "",
+    total: 250,
+    subtotal: 250,
+    packagingCharge: 0,
+    discountAmount: 25,
+    discountCode: "WELCOME10",
+    netTotal: 236,
+    customerMobile: "9876543210",
+    customerName: "Ramesh Kumar",
+    orderType: "Dine-in",
+    waiterName: "Murali",
+    paymentMethod: "UPI",
+    notes: "Medium spicy",
     status: "Ready",
-    timestamp: "2026-04-21T13:12:24.952Z"
+    takeawayStatus: "Ready",
+    timestamp: "2026-08-17T13:12:24.952Z"
   }
 ];
 
 const App = () => {
-  const [userRole, setUserRole] = useState(null); // 'admin', 'waiter', 'customer', or null
+  const [userRole, setUserRole] = useState(null); // 'admin', 'waiter', 'customer'
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
-  // LocalStorage state initialization
+  // LocalStorage states
   const [menu, setMenuState] = useState(() => {
     const saved = localStorage.getItem("vrs_menu");
     if (saved) {
@@ -125,8 +164,57 @@ const App = () => {
     return INITIAL_SETTINGS;
   });
 
+  const [customers, setCustomersState] = useState(() => {
+    const saved = localStorage.getItem("vrs_customers");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    const init = [
+      { id: "1", name: "Ramesh Kumar", mobile: "9876543210", email: "ramesh@gmail.com", totalSpend: 2450, totalVisits: 6, lastVisit: "2026-08-17T12:00:00.000Z", tier: "Silver", tags: ["VIP", "Regular"] }
+    ];
+    localStorage.setItem("vrs_customers", JSON.stringify(init));
+    return init;
+  });
+
+  const [offers, setOffersState] = useState(() => {
+    const saved = localStorage.getItem("vrs_offers");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem("vrs_offers", JSON.stringify(INITIAL_OFFERS));
+    return INITIAL_OFFERS;
+  });
+
+  const [expenses, setExpensesState] = useState(() => {
+    const saved = localStorage.getItem("vrs_expenses");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    localStorage.setItem("vrs_expenses", JSON.stringify(INITIAL_EXPENSES));
+    return INITIAL_EXPENSES;
+  });
+
+  // Table Service Assistance Calls State
+  const [tableRequests, setTableRequestsState] = useState(() => {
+    const saved = localStorage.getItem("vrs_table_requests");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
+
+  // POS / Order sheet states
   const [cart, setCart] = useState({});
   const [tableNumber, setTableNumber] = useState("");
+  const [customerMobile, setCustomerMobile] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [orderType, setOrderType] = useState("Dine-in"); // 'Dine-in' or 'Takeaway'
+  const [packagingCharge, setPackagingCharge] = useState(15);
+  const [estimatedPickupTime, setEstimatedPickupTime] = useState("15 mins");
+  const [paymentMethod, setPaymentMethod] = useState("Cash"); // 'Cash', 'UPI', 'Card'
+  const [appliedOffer, setAppliedOffer] = useState(null);
+  const [couponCodeInput, setCouponCodeInput] = useState("");
+
   const [activeCategory, setActiveCategory] = useState("");
   const [showCart, setShowCart] = useState(false);
   const [lastOrder, setLastOrder] = useState(null);
@@ -134,42 +222,64 @@ const App = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [waiterTab, setWaiterTab] = useState("Menu");
   const [editingOrderId, setEditingOrderId] = useState(null);
+  const [assistanceSentAlert, setAssistanceSentAlert] = useState(null);
 
-  // Helper sync functions
-  const setMenu = (newMenu) => {
+  // Sync setters
+  const setMenu = (val) => {
     setMenuState(prev => {
-      const value = typeof newMenu === 'function' ? newMenu(prev) : newMenu;
-      localStorage.setItem("vrs_menu", JSON.stringify(value));
-      return value;
+      const v = typeof val === 'function' ? val(prev) : val;
+      localStorage.setItem("vrs_menu", JSON.stringify(v));
+      return v;
     });
   };
 
-  const setOrders = (newOrders) => {
+  const setOrders = (val) => {
     setOrdersState(prev => {
-      const value = typeof newOrders === 'function' ? newOrders(prev) : newOrders;
-      localStorage.setItem("vrs_orders", JSON.stringify(value));
-      return value;
+      const v = typeof val === 'function' ? val(prev) : val;
+      localStorage.setItem("vrs_orders", JSON.stringify(v));
+      return v;
     });
   };
 
-  const setSettings = (newSettings) => {
+  const setSettings = (val) => {
     setSettingsState(prev => {
-      const value = typeof newSettings === 'function' ? newSettings(prev) : newSettings;
-      localStorage.setItem("vrs_settings", JSON.stringify(value));
-      return value;
+      const v = typeof val === 'function' ? val(prev) : val;
+      localStorage.setItem("vrs_settings", JSON.stringify(v));
+      return v;
     });
   };
 
-  // Sync across tabs in real-time
-  useEffect(() => {
-    const handleStorage = (e) => {
-      if (e.key === "vrs_menu" && e.newValue) setMenuState(JSON.parse(e.newValue));
-      if (e.key === "vrs_orders" && e.newValue) setOrdersState(JSON.parse(e.newValue));
-      if (e.key === "vrs_settings" && e.newValue) setSettingsState(JSON.parse(e.newValue));
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+  const setCustomers = (val) => {
+    setCustomersState(prev => {
+      const v = typeof val === 'function' ? val(prev) : val;
+      localStorage.setItem("vrs_customers", JSON.stringify(v));
+      return v;
+    });
+  };
+
+  const setOffers = (val) => {
+    setOffersState(prev => {
+      const v = typeof val === 'function' ? val(prev) : val;
+      localStorage.setItem("vrs_offers", JSON.stringify(v));
+      return v;
+    });
+  };
+
+  const setExpenses = (val) => {
+    setExpensesState(prev => {
+      const v = typeof val === 'function' ? val(prev) : val;
+      localStorage.setItem("vrs_expenses", JSON.stringify(v));
+      return v;
+    });
+  };
+
+  const setTableRequests = (val) => {
+    setTableRequestsState(prev => {
+      const v = typeof val === 'function' ? val(prev) : val;
+      localStorage.setItem("vrs_table_requests", JSON.stringify(v));
+      return v;
+    });
+  };
 
   const categories = useMemo(() => {
     const cats = [...new Set(menu.map(item => item.category))];
@@ -177,7 +287,6 @@ const App = () => {
   }, [menu]);
 
   useEffect(() => {
-    // Check for Customer Mode (e.g. ?table=5)
     const params = new URLSearchParams(window.location.search);
     const tableParam = params.get("table");
     if (tableParam) {
@@ -185,7 +294,6 @@ const App = () => {
       setUserRole("customer");
       setTableNumber(tableParam);
     } else {
-      // Restore staff session
       const savedLogin = localStorage.getItem("isLoggedIn") === "true";
       const savedRole = localStorage.getItem("userRole");
       if (savedLogin && savedRole) {
@@ -201,6 +309,30 @@ const App = () => {
     }
   }, [categories]);
 
+  // Auto look up customer name when mobile is entered
+  useEffect(() => {
+    if (customerMobile && customerMobile.length === 10) {
+      const found = customers.find(c => c.mobile === customerMobile);
+      if (found && found.name) {
+        setCustomerName(found.name);
+      }
+    }
+  }, [customerMobile, customers]);
+
+  const triggerTableAssistance = (type) => {
+    if (!tableNumber) return;
+    const newReq = {
+      id: "REQ-" + Date.now(),
+      tableNumber: tableNumber.toString(),
+      type, // 'CALL_WAITER' or 'REQUEST_BILL'
+      timestamp: new Date().toISOString(),
+      status: 'Pending'
+    };
+    setTableRequests([newReq, ...tableRequests]);
+    setAssistanceSentAlert(type === 'CALL_WAITER' ? '🔔 Waiter has been notified to attend Table ' + tableNumber : '🧾 Bill request sent to counter!');
+    setTimeout(() => setAssistanceSentAlert(null), 3000);
+  };
+
   const filteredMenu = useMemo(() => {
     const base = searchQuery ? menu : menu.filter(i => i.category === activeCategory);
     if (!searchQuery) return base;
@@ -210,17 +342,50 @@ const App = () => {
     );
   }, [activeCategory, searchQuery, menu]);
 
-  const cartTotal = useMemo(() => {
+  const cartSubtotal = useMemo(() => {
     return Object.entries(cart).reduce((total, [id, qty]) => {
       const item = menu.find(i => String(i.id) === String(id));
       return total + (item ? item.price * qty : 0);
     }, 0);
   }, [cart, menu]);
 
+  const activePackagingCharge = orderType === 'Takeaway' ? packagingCharge : 0;
+
+  const discountAmount = useMemo(() => {
+    if (!appliedOffer) return 0;
+    if (cartSubtotal < (appliedOffer.minBillAmount || 0)) return 0;
+
+    if (appliedOffer.discountType === 'percentage' || appliedOffer.discountType === 'happy_hours') {
+      return Math.round((cartSubtotal * appliedOffer.discountValue) / 100);
+    }
+    return Math.min(cartSubtotal, appliedOffer.discountValue);
+  }, [appliedOffer, cartSubtotal]);
+
+  const taxableAmount = Math.max(0, cartSubtotal - discountAmount + activePackagingCharge);
+  const gstAmount = Math.round((taxableAmount * settings.gst) / 100);
+  const cartNetTotal = taxableAmount + gstAmount;
   const cartCount = Object.values(cart).reduce((a, b) => a + b, 0);
 
+  const applyCouponCode = () => {
+    if (!couponCodeInput) return;
+    const found = offers.find(o => o.code.toUpperCase() === couponCodeInput.trim().toUpperCase() && o.isActive);
+    if (found) {
+      if (cartSubtotal < (found.minBillAmount || 0)) {
+        alert(`This offer requires a minimum bill of ₹${found.minBillAmount}`);
+        return;
+      }
+      setAppliedOffer(found);
+      alert(`🎉 Coupon "${found.code}" Applied Successfully!`);
+    } else {
+      alert("Invalid or expired coupon code!");
+    }
+  };
+
   const placeOrder = () => {
-    if (!tableNumber) { alert("Please enter table number!"); return; }
+    if (orderType === 'Dine-in' && !tableNumber) { 
+      alert("Please enter table number for Dine-in orders!"); 
+      return; 
+    }
 
     const itemsArray = Object.entries(cart)
       .map(([id, qty]) => {
@@ -231,25 +396,45 @@ const App = () => {
 
     if (itemsArray.length === 0) return;
 
-    const total = itemsArray.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-
     let updatedOrders = [...orders];
     let createdOrUpdatedOrder = null;
 
+    const takeawayOrdersCount = orders.filter(o => o.orderType === 'Takeaway' || o.tokenNumber).length;
+    const newTokenNumber = orderType === 'Takeaway' ? `TK-${String(takeawayOrdersCount + 1).padStart(2, '0')}` : '';
+
+    const newOrderObj = {
+      id: editingOrderId || ("ORD-" + Math.floor(100 + Math.random() * 900)),
+      tableNumber: orderType === 'Takeaway' ? 'Takeaway' : tableNumber.toString(),
+      tokenNumber: newTokenNumber,
+      items: itemsArray,
+      subtotal: cartSubtotal,
+      total: cartSubtotal,
+      packagingCharge: activePackagingCharge,
+      discountAmount,
+      discountCode: appliedOffer ? appliedOffer.code : "",
+      netTotal: cartNetTotal,
+      customerMobile,
+      customerName: customerName || "Guest Customer",
+      orderType,
+      estimatedPickupTime: orderType === 'Takeaway' ? estimatedPickupTime : '',
+      takeawayStatus: orderType === 'Takeaway' ? 'Order' : 'Order',
+      waiterName: userRole === 'waiter' ? 'Staff' : 'Counter Admin',
+      paymentMethod,
+      notes: specialNotes,
+      status: 'Pending',
+      timestamp: new Date().toISOString()
+    };
+
     if (editingOrderId) {
-      createdOrUpdatedOrder = {
-        id: editingOrderId,
-        tableNumber: tableNumber.toString(),
-        items: itemsArray,
-        total: total,
-        notes: specialNotes,
-        status: 'Pending',
-        timestamp: new Date().toISOString()
-      };
-      updatedOrders = updatedOrders.map(o => o.id === editingOrderId ? createdOrUpdatedOrder : o);
+      updatedOrders = updatedOrders.map(o => o.id === editingOrderId ? newOrderObj : o);
+      createdOrUpdatedOrder = newOrderObj;
       setEditingOrderId(null);
     } else {
-      const activeOrderIndex = updatedOrders.findIndex(o => o.tableNumber.toString() === tableNumber.toString() && o.status !== 'Billed');
+      const activeOrderIndex = updatedOrders.findIndex(o => 
+        o.tableNumber.toString() === tableNumber.toString() && 
+        o.status !== 'Billed' && 
+        orderType === 'Dine-in'
+      );
 
       if (activeOrderIndex !== -1) {
         const activeOrder = updatedOrders[activeOrderIndex];
@@ -263,12 +448,19 @@ const App = () => {
           }
         });
 
-        const newTotal = mergedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        const mergedSubtotal = mergedItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        const mergedNetTotal = mergedSubtotal - discountAmount + Math.round(((mergedSubtotal - discountAmount) * settings.gst)/100);
 
         createdOrUpdatedOrder = {
           ...activeOrder,
           items: mergedItems,
-          total: newTotal,
+          subtotal: mergedSubtotal,
+          total: mergedSubtotal,
+          discountAmount,
+          discountCode: appliedOffer ? appliedOffer.code : activeOrder.discountCode,
+          netTotal: mergedNetTotal,
+          customerMobile: customerMobile || activeOrder.customerMobile,
+          customerName: customerName || activeOrder.customerName,
           notes: activeOrder.notes ? activeOrder.notes + (specialNotes ? " | " + specialNotes : "") : specialNotes,
           status: 'Pending',
           timestamp: new Date().toISOString()
@@ -276,16 +468,34 @@ const App = () => {
 
         updatedOrders[activeOrderIndex] = createdOrUpdatedOrder;
       } else {
-        createdOrUpdatedOrder = {
-          id: "ORD-" + Math.floor(100 + Math.random() * 900),
-          tableNumber: tableNumber.toString(),
-          items: itemsArray,
-          total: total,
-          notes: specialNotes,
-          status: "Pending",
-          timestamp: new Date().toISOString()
-        };
+        createdOrUpdatedOrder = newOrderObj;
         updatedOrders = [createdOrUpdatedOrder, ...updatedOrders];
+      }
+    }
+
+    if (customerMobile && customerMobile.length === 10) {
+      const existingCust = customers.find(c => c.mobile === customerMobile);
+      if (existingCust) {
+        const updatedCust = {
+          ...existingCust,
+          name: customerName || existingCust.name,
+          totalSpend: existingCust.totalSpend + cartNetTotal,
+          totalVisits: existingCust.totalVisits + 1,
+          lastVisit: new Date().toISOString()
+        };
+        setCustomers(prev => prev.map(c => c.mobile === customerMobile ? updatedCust : c));
+      } else {
+        const newCust = {
+          id: Date.now().toString(),
+          name: customerName || "Guest",
+          mobile: customerMobile,
+          totalSpend: cartNetTotal,
+          totalVisits: 1,
+          lastVisit: new Date().toISOString(),
+          tier: "Bronze",
+          tags: ["New Customer"]
+        };
+        setCustomers(prev => [newCust, ...prev]);
       }
     }
 
@@ -294,6 +504,7 @@ const App = () => {
     setCart({});
     setShowCart(false);
     setSpecialNotes("");
+    setAppliedOffer(null);
   };
 
   if (!isLoggedIn) {
@@ -318,16 +529,34 @@ const App = () => {
           }} 
           menu={menu} setMenu={setMenu}
           settings={settings} setSettings={setSettings}
+          customers={customers} setCustomers={setCustomers}
+          offers={offers} setOffers={setOffers}
+          expenses={expenses} setExpenses={setExpenses}
+          tableRequests={tableRequests} setTableRequests={setTableRequests}
+          onSelectTableForOrder={(tblNo, ord) => {
+            setTableNumber(tblNo);
+            setOrderType("Dine-in");
+            if (ord) {
+              const newCart = {};
+              ord.items.forEach(i => newCart[i.id] = i.quantity);
+              setCart(newCart);
+              setEditingOrderId(ord.id);
+              setCustomerMobile(ord.customerMobile || "");
+              setCustomerName(ord.customerName || "");
+            }
+            setShowCart(true);
+          }}
         />
       </div>
     );
   }
 
   const isCustomer = userRole === 'customer';
+  const isMenuOnlyMode = settings.orderingMode === 'MENU_ONLY' && isCustomer;
 
   return (
     <div className="app-container">
-      {/* Hero */}
+      {/* Hero Header */}
       <div className="hero" style={{ backgroundImage: `linear-gradient(to bottom, rgba(26, 18, 8, 0.4), #1A1208), url(${heroBg})` }}>
         <div className="hero-content">
           <div className="hero-top">
@@ -339,7 +568,21 @@ const App = () => {
         </div>
       </div>
 
-      {/* Floating Action Bar */}
+      {/* Menu Only Mode Notice Banner */}
+      {isMenuOnlyMode && (
+        <div className="menu-only-banner">
+          📢 <strong>Menu Browsing Mode Active</strong>: Self-ordering is currently turned off. Please inform our waiter to place your order!
+        </div>
+      )}
+
+      {/* Assistance Alert Banner */}
+      {assistanceSentAlert && (
+        <div className="assistance-alert-banner">
+          {assistanceSentAlert}
+        </div>
+      )}
+
+      {/* Floating Header */}
       <div className="sticky-header">
         <div className="header-actions">
           {!isCustomer && (
@@ -353,12 +596,24 @@ const App = () => {
             <input placeholder="Search menu items..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
           {isCustomer && (
-            <div style={{background: '#E8621A', color: 'white', padding: '8px 15px', borderRadius: '12px', fontWeight: '800'}}>
+            <div className="customer-table-pill">
               T-{tableNumber}
             </div>
           )}
         </div>
         
+        {/* Customer Assistance Action Buttons */}
+        {isCustomer && (
+          <div className="customer-assistance-bar">
+            <button className="btn-call-waiter" onClick={() => triggerTableAssistance('CALL_WAITER')}>
+              <Bell size={14} /> Call Waiter
+            </button>
+            <button className="btn-req-bill" onClick={() => triggerTableAssistance('REQUEST_BILL')}>
+              <FileText size={14} /> Request Bill
+            </button>
+          </div>
+        )}
+
         {/* Horizontal Categories */}
         {!searchQuery && (
           <div className="category-scroll">
@@ -377,29 +632,33 @@ const App = () => {
 
       {/* Menu / Orders Toggle */}
       {waiterTab === "Menu" ? (
-        <>
-          <div className="menu-section">
-            <div className="section-header">
-              <h2>{searchQuery ? 'Search Results' : activeCategory}</h2>
-            </div>
-            
-            <div className="menu-list">
-              {filteredMenu.map(item => (
-                <MenuCard 
-                  key={item.id} item={item} isWaiter={true} 
-                  qty={cart[item.id] || 0}
-                  onAdd={() => setCart({...cart, [item.id]: (cart[item.id] || 0) + 1})}
-                  onRemove={() => {
-                    const newCart = {...cart};
-                    if (newCart[item.id] > 1) newCart[item.id]--;
-                    else delete newCart[item.id];
-                    setCart(newCart);
-                  }}
-                />
-              ))}
-            </div>
+        <div className="menu-section">
+          <div className="section-header">
+            <h2>{searchQuery ? 'Search Results' : activeCategory}</h2>
           </div>
-        </>
+          
+          <div className="menu-list">
+            {filteredMenu.map(item => (
+              <MenuCard 
+                key={item.id} item={item} isWaiter={true} 
+                qty={cart[item.id] || 0}
+                onAdd={() => {
+                  if (isMenuOnlyMode) {
+                    alert("Menu Browsing Mode: Self-ordering is disabled. Please inform staff to order!");
+                    return;
+                  }
+                  setCart({...cart, [item.id]: (cart[item.id] || 0) + 1});
+                }}
+                onRemove={() => {
+                  const newCart = {...cart};
+                  if (newCart[item.id] > 1) newCart[item.id]--;
+                  else delete newCart[item.id];
+                  setCart(newCart);
+                }}
+              />
+            ))}
+          </div>
+        </div>
       ) : (
         <div className="active-orders-section" style={{padding: '20px'}}>
           <h2>Active Orders</h2>
@@ -407,12 +666,13 @@ const App = () => {
             {orders.filter(o => o.status !== 'Billed').map(o => (
               <div key={o.id} className="order-card" style={{background: 'white', padding: '15px', borderRadius: '15px', marginBottom: '10px', border: '1px solid #eee'}}>
                 <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                  <strong>Table {o.tableNumber}</strong>
-                  <span style={{fontSize: '0.8rem', color: '#666'}}>{o.status}</span>
+                  <strong>{o.orderType === 'Takeaway' ? `Token #${o.tokenNumber || o.id}` : `Table ${o.tableNumber}`} ({o.orderType || 'Dine-in'})</strong>
+                  <span style={{fontSize: '0.8rem', color: '#666'}}>{o.takeawayStatus || o.status}</span>
                 </div>
                 <div style={{fontSize: '0.9rem', margin: '5px 0'}}>
                   {o.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
                 </div>
+                {o.customerMobile && <div style={{fontSize: '0.8rem', color: '#E8621A'}}>📱 {o.customerName} ({o.customerMobile})</div>}
                 <button 
                   className="btn-edit-order" 
                   style={{background: '#E8621A', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: '600', marginTop: '10px'}}
@@ -422,6 +682,9 @@ const App = () => {
                     setCart(newCart);
                     setTableNumber(o.tableNumber);
                     setEditingOrderId(o.id);
+                    setCustomerMobile(o.customerMobile || "");
+                    setCustomerName(o.customerName || "");
+                    setOrderType(o.orderType || "Dine-in");
                     setWaiterTab("Menu");
                     setShowCart(true);
                   }}
@@ -436,13 +699,13 @@ const App = () => {
 
       {/* Floating Cart Pill */}
       <AnimatePresence>
-        {cartCount > 0 && (
+        {cartCount > 0 && !isMenuOnlyMode && (
           <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="floating-cart">
             <div className="cart-pill" onClick={() => setShowCart(true)}>
               <div className="cart-badge">{cartCount}</div>
               <div className="cart-text">
                 <span>{isCustomer ? 'View My Order' : 'View Order Summary'}</span>
-                {userRole !== 'waiter' && <small>₹{cartTotal}</small>}
+                {userRole !== 'waiter' && <small>₹{cartNetTotal}</small>}
               </div>
               <ArrowRight size={20} />
             </div>
@@ -450,7 +713,7 @@ const App = () => {
         )}
       </AnimatePresence>
 
-      {/* Bottom Nav */}
+      {/* Bottom Navigation for Staff */}
       {!isCustomer && (
         <div className="bottom-nav">
           <button className={`nav-item ${waiterTab === 'Menu' ? 'active' : ''}`} onClick={() => setWaiterTab('Menu')}><UtensilsCrossed size={22} /><span>Menu</span></button>
@@ -464,27 +727,81 @@ const App = () => {
         </div>
       )}
 
-      {/* Bottom Sheet Modal */}
+      {/* POS Cart & Checkout Sheet */}
       <AnimatePresence>
         {showCart && (
           <div className="modal-bg" onClick={() => setShowCart(false)}>
             <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="sheet" onClick={e => e.stopPropagation()}>
               <div className="sheet-bar" />
               <div className="sheet-header">
-                <h3>Order Summary</h3>
+                <h3>POS Checkout & Order Summary</h3>
                 <button onClick={() => setShowCart(false)}><X /></button>
               </div>
               <div className="sheet-content">
-                <div className="sheet-table-box">
-                  <Table size={18} color="#E8621A" />
-                  <input 
-                    type="number" 
-                    placeholder="Enter Table Number" 
-                    value={tableNumber} 
-                    onChange={e => setTableNumber(e.target.value)} 
-                  />
+                {/* Order Type Selector */}
+                <div className="order-type-tabs">
+                  <button className={orderType === 'Dine-in' ? 'active' : ''} onClick={() => setOrderType('Dine-in')}>🍽️ Dine-in</button>
+                  <button className={orderType === 'Takeaway' ? 'active' : ''} onClick={() => setOrderType('Takeaway')}>📦 Takeaway / Parcel</button>
                 </div>
 
+                {/* Customer Details Input */}
+                <div className="customer-input-box">
+                  <h4>👥 Customer Details (Mobile is Key Identifier)</h4>
+                  <div className="form-row-2">
+                    <input 
+                      type="tel" 
+                      placeholder="Customer Mobile (10 Digits) *" 
+                      value={customerMobile} 
+                      onChange={e => setCustomerMobile(e.target.value)} 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Customer Name" 
+                      value={customerName} 
+                      onChange={e => setCustomerName(e.target.value)} 
+                    />
+                  </div>
+                </div>
+
+                {orderType === 'Dine-in' ? (
+                  <div className="sheet-table-box">
+                    <Table size={18} color="#E8621A" />
+                    <input 
+                      type="number" 
+                      placeholder="Enter Table Number *" 
+                      value={tableNumber} 
+                      onChange={e => setTableNumber(e.target.value)} 
+                    />
+                  </div>
+                ) : (
+                  <div className="parcel-controls-box">
+                    <div className="parcel-row">
+                      <label>📦 Packaging Container Fee (₹)</label>
+                      <input 
+                        type="number" 
+                        value={packagingCharge} 
+                        onChange={e => setPackagingCharge(parseFloat(e.target.value) || 0)} 
+                      />
+                    </div>
+                    <div className="pickup-time-selector">
+                      <label>⏰ Estimated Pickup Time</label>
+                      <div className="time-pills">
+                        {['10 mins', '15 mins', '20 mins', '30 mins'].map(t => (
+                          <button 
+                            key={t} 
+                            type="button"
+                            className={estimatedPickupTime === t ? 'active' : ''} 
+                            onClick={() => setEstimatedPickupTime(t)}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Items List */}
                 <div className="cart-items">
                   {Object.entries(cart).map(([id, qty]) => {
                     const item = menu.find(i => String(i.id) === String(id));
@@ -510,20 +827,55 @@ const App = () => {
                     );
                   })}
                 </div>
+
                 <button className="btn-add-more" onClick={() => setShowCart(false)}>
                   <Plus size={16} /> Add More Items
                 </button>
 
-                <textarea placeholder="Special instructions (e.g. spicy...)" value={specialNotes} onChange={e => setSpecialNotes(e.target.value)} />
+                {/* Coupon Code / Offers Engine Integration */}
+                <div className="coupon-box">
+                  <h4>🏷️ Apply Offers & Coupon Code</h4>
+                  <div className="coupon-input-group">
+                    <input 
+                      type="text" 
+                      placeholder="Enter Coupon Code (e.g. WELCOME50)" 
+                      value={couponCodeInput} 
+                      onChange={e => setCouponCodeInput(e.target.value)} 
+                    />
+                    <button onClick={applyCouponCode}>Apply</button>
+                  </div>
+                  {appliedOffer && (
+                    <div className="applied-offer-pill">
+                      <span>✓ Applied: <strong>{appliedOffer.code}</strong> (-₹{discountAmount})</span>
+                      <button onClick={() => setAppliedOffer(null)}>✕ Remove</button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Payment Method Selector */}
+                <div className="payment-method-selector">
+                  <h4>💳 Select Payment Method</h4>
+                  <div className="p-tabs">
+                    <button className={paymentMethod === 'Cash' ? 'active' : ''} onClick={() => setPaymentMethod('Cash')}>💵 Cash</button>
+                    <button className={paymentMethod === 'UPI' ? 'active' : ''} onClick={() => setPaymentMethod('UPI')}>📱 UPI / QR</button>
+                    <button className={paymentMethod === 'Card' ? 'active' : ''} onClick={() => setPaymentMethod('Card')}>💳 Card</button>
+                  </div>
+                </div>
+
+                <textarea placeholder="Special instructions (e.g. extra spicy parcel...)" value={specialNotes} onChange={e => setSpecialNotes(e.target.value)} />
+                
                 {userRole !== 'waiter' && (
                   <div className="total-summary">
-                    <div className="row"><span>Subtotal</span><span>₹{cartTotal}</span></div>
-                    <div className="row"><span>GST ({settings.gst}%)</span><span>₹{Math.round(cartTotal * settings.gst / 100)}</span></div>
-                    <div className="row grand"><span>Total</span><span>₹{cartTotal + Math.round(cartTotal * settings.gst / 100)}</span></div>
+                    <div className="row"><span>Subtotal</span><span>₹{cartSubtotal}</span></div>
+                    {orderType === 'Takeaway' && <div className="row"><span>Packaging Container Fee</span><span>+ ₹{activePackagingCharge}</span></div>}
+                    {discountAmount > 0 && <div className="row green-row"><span>Discount ({appliedOffer?.code})</span><span>- ₹{discountAmount}</span></div>}
+                    <div className="row"><span>GST ({settings.gst}%)</span><span>₹{gstAmount}</span></div>
+                    <div className="row grand"><span>Net Payable Total</span><span>₹{cartNetTotal}</span></div>
                   </div>
                 )}
+                
                 <button className="btn-order" onClick={placeOrder}>
-                  {editingOrderId ? 'Update Order' : 'Confirm Order'}
+                  {editingOrderId ? 'Update Order' : 'Confirm Order & Send'}
                 </button>
               </div>
             </motion.div>
@@ -531,14 +883,16 @@ const App = () => {
         )}
       </AnimatePresence>
 
-      {/* Success Animation */}
+      {/* Success Modal */}
       <AnimatePresence>
         {lastOrder && (
           <div className="success-overlay">
             <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="success-modal">
               <CheckCircle2 size={64} color="#2e7d32" />
-              <h2>Order Sent!</h2>
+              <h2>{lastOrder.orderType === 'Takeaway' ? 'Parcel Order Created!' : 'Order Sent Successfully!'}</h2>
+              {lastOrder.tokenNumber && <div className="token-success-badge">PARCEL TOKEN #{lastOrder.tokenNumber}</div>}
               <div className="order-id-badge">#{lastOrder.id}</div>
+              <p>Net Bill Total: <strong>₹{lastOrder.netTotal || lastOrder.total}</strong></p>
               <button className="btn-primary" onClick={() => setLastOrder(null)}>Done</button>
             </motion.div>
           </div>
@@ -551,6 +905,9 @@ const App = () => {
         .hero h1 { color: white; font-size: 1.8rem; line-height: 1; }
         .hero p { color: #AAA; font-size: 0.9rem; margin-top: 4px; }
 
+        .menu-only-banner { background: #FEF3C7; color: #92400E; padding: 10px 16px; font-size: 0.85rem; border-bottom: 1px solid #FDE68A; text-align: center; }
+        .assistance-alert-banner { background: #DCFCE7; color: #166534; padding: 10px 16px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 1px solid #BBF7D0; }
+
         .sticky-header { position: sticky; top: 0; background: white; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .header-actions { display: flex; padding: 12px; gap: 10px; }
         .table-selector { background: #F5F5F5; border-radius: 12px; display: flex; align-items: center; padding: 0 10px; flex: 0 0 80px; }
@@ -558,6 +915,11 @@ const App = () => {
         .search-pill { background: #F5F5F5; border-radius: 12px; display: flex; align-items: center; padding: 0 12px; flex: 1; }
         .search-pill input { border: none; background: transparent; width: 100%; padding: 10px; outline: none; font-size: 0.9rem; }
         
+        .customer-table-pill { background: #E8621A; color: white; padding: 8px 15px; border-radius: 12px; font-weight: 800; }
+        .customer-assistance-bar { display: flex; gap: 8px; padding: 0 12px 10px; }
+        .btn-call-waiter { flex: 1; background: #FEF08A; color: #854D0E; border: 1px solid #FDE047; padding: 8px; border-radius: 10px; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+        .btn-req-bill { flex: 1; background: #BFDBFE; color: #1E40AF; border: 1px solid #93C5FD; padding: 8px; border-radius: 10px; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+
         .category-scroll { display: flex; overflow-x: auto; padding: 0 12px 12px; gap: 8px; }
         .category-scroll button { flex: 0 0 auto; padding: 8px 16px; border-radius: 50px; border: 1px solid #EEE; background: white; font-size: 0.8rem; font-weight: 600; color: #666; }
         .category-scroll button.active { background: var(--primary); color: white; border-color: var(--primary); }
@@ -565,7 +927,6 @@ const App = () => {
         .menu-section { padding: 20px 16px; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .section-header h2 { font-size: 1.1rem; color: #333; }
-        .mode-badge { background: #F0F0F0; padding: 4px 10px; border-radius: 50px; display: flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 700; color: #666; cursor: pointer; }
 
         .menu-card { background: white; border-radius: 16px; padding: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #F0F0F0; }
         .item-info { display: flex; flex-direction: column; gap: 2px; }
@@ -584,42 +945,75 @@ const App = () => {
         .btn-add { background: white; border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 0.8rem; }
 
         .floating-cart { position: fixed; bottom: 85px; left: 16px; right: 16px; z-index: 1000; }
-        .cart-pill { background: var(--accent); color: white; padding: 12px 20px; border-radius: 50px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .cart-pill { background: var(--accent); color: white; padding: 12px 20px; border-radius: 50px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 10px 30px rgba(0,0,0,0.3); cursor: pointer; }
         .cart-badge { background: var(--primary); width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
         .cart-text { flex: 1; margin-left: 12px; display: flex; flex-direction: column; }
         .cart-text span { font-weight: 700; font-size: 0.95rem; }
         .cart-text small { opacity: 0.7; font-size: 0.75rem; }
 
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #EEE; }
-        .nav-item { border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: white; display: flex; justify-content: space-around; padding: 10px; border-top: 1px solid #EEE; z-index: 999; }
+        .nav-item { border: none; background: none; display: flex; flex-direction: column; align-items: center; gap: 4px; color: #999; cursor: pointer; }
         .nav-item.active { color: var(--primary); }
         .nav-item span { font-size: 0.65rem; font-weight: 600; }
 
         .modal-bg { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); z-index: 2000; }
         .sheet { position: absolute; bottom: 0; width: 100%; background: white; border-radius: 24px 24px 0 0; padding: 20px; max-height: 90vh; display: flex; flex-direction: column; }
         .sheet-bar { width: 40px; height: 4px; background: #DDD; border-radius: 2px; margin: 0 auto 15px; }
-        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .sheet-header button { background: #F5F5F5; border: none; padding: 6px; border-radius: 50%; }
-        .sheet-content { padding: 0 20px 20px; max-height: 70vh; overflow-y: auto; }
-        .sheet-table-box { background: #F9F9F9; padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; border: 1px solid #EEE; }
+        .sheet-content { padding: 0 10px 20px; max-height: 75vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+
+        .order-type-tabs { display: flex; background: #F5F5F5; padding: 4px; border-radius: 12px; gap: 4px; }
+        .order-type-tabs button { flex: 1; padding: 10px; border: none; border-radius: 10px; font-weight: 700; color: #555; background: transparent; cursor: pointer; }
+        .order-type-tabs button.active { background: white; color: #E8621A; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+        .customer-input-box { background: #F9FAFB; padding: 12px; border-radius: 12px; border: 1px solid #EEF0F2; }
+        .customer-input-box h4 { font-size: 0.8rem; color: #444; margin-bottom: 8px; }
+        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .customer-input-box input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #DDD; outline: none; font-size: 0.85rem; }
+
+        .parcel-controls-box { background: #FFF7ED; border: 1px solid #FFEDD5; padding: 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .parcel-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #C2410C; font-weight: 700; }
+        .parcel-row input { width: 80px; padding: 6px; border-radius: 6px; border: 1px solid #FDBA74; text-align: center; font-weight: bold; }
+
+        .pickup-time-selector { display: flex; flex-direction: column; gap: 6px; }
+        .pickup-time-selector label { font-size: 0.75rem; color: #C2410C; font-weight: 700; }
+        .time-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+        .time-pills button { background: white; border: 1px solid #FDBA74; color: #9A3412; padding: 6px 12px; border-radius: 50px; font-weight: 700; font-size: 0.75rem; cursor: pointer; }
+        .time-pills button.active { background: #EA580C; color: white; border-color: #EA580C; }
+
+        .sheet-table-box { background: #F9F9F9; padding: 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; border: 1px solid #EEE; }
         .sheet-table-box input { border: none; background: transparent; font-size: 1rem; font-weight: 700; width: 100%; outline: none; }
-        .cart-items { display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px; }
+
+        .cart-items { display: flex; flex-direction: column; gap: 12px; }
         .cart-item { display: flex; justify-content: space-between; align-items: center; }
-        .btn-add-more { width: 100%; padding: 12px; border-radius: 12px; border: 2px dashed #DDD; background: transparent; color: #666; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 20px; cursor: pointer; }
-        .btn-add-more:hover { border-color: var(--primary); color: var(--primary); }
-        .item-main { display: flex; align-items: center; gap: 10px; }
-        .item-ctrl { display: flex; align-items: center; gap: 12px; background: #F9F9F9; padding: 4px; border-radius: 8px; }
-        .item-ctrl button { border: none; background: #DDD; padding: 4px; border-radius: 4px; }
-        .item-price { font-weight: 700; color: #333; width: 60px; text-align: right; }
-        .sheet textarea { width: 100%; background: #F9F9F9; border: 1px solid #EEE; padding: 12px; border-radius: 12px; height: 80px; margin-bottom: 20px; font-family: inherit; }
-        .total-summary { background: #F9F9F9; padding: 16px; border-radius: 16px; margin-bottom: 20px; }
-        .row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; color: #666; }
-        .grand { border-top: 1px dashed #DDD; padding-top: 8px; margin-top: 8px; font-weight: 800; color: #000; font-size: 1.1rem; }
-        .btn-order { width: 100%; background: var(--primary); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 700; font-size: 1.1rem; }
+        .btn-add-more { width: 100%; padding: 10px; border-radius: 12px; border: 2px dashed #DDD; background: transparent; color: #666; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+
+        .coupon-box { background: #FFF9F5; border: 1px solid #FFE4D6; padding: 12px; border-radius: 12px; }
+        .coupon-box h4 { font-size: 0.8rem; color: #E8621A; margin-bottom: 6px; }
+        .coupon-input-group { display: flex; gap: 8px; }
+        .coupon-input-group input { flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #FFC4A8; font-weight: 700; text-transform: uppercase; }
+        .coupon-input-group button { background: #E8621A; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .applied-offer-pill { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.8rem; color: #15803D; background: #DCFCE7; padding: 6px 12px; border-radius: 6px; }
+        .applied-offer-pill button { background: none; border: none; color: #DC2626; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+
+        .payment-method-selector { background: #F9FAFB; padding: 12px; border-radius: 12px; border: 1px solid #EEF0F2; }
+        .payment-method-selector h4 { font-size: 0.8rem; color: #444; margin-bottom: 8px; }
+        .p-tabs { display: flex; gap: 6px; }
+        .p-tabs button { flex: 1; padding: 8px; border: 1px solid #DDD; border-radius: 8px; background: white; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+        .p-tabs button.active { background: #1A1208; color: white; border-color: #1A1208; }
+
+        .sheet textarea { width: 100%; background: #F9F9F9; border: 1px solid #EEE; padding: 10px; border-radius: 12px; height: 60px; font-family: inherit; }
+        .total-summary { background: #F9F9F9; padding: 14px; border-radius: 16px; }
+        .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; color: #666; }
+        .green-row { color: #16A34A; font-weight: 700; }
+        .grand { border-top: 1px dashed #DDD; padding-top: 8px; margin-top: 6px; font-weight: 800; color: #000; font-size: 1.1rem; }
+        .btn-order { width: 100%; background: var(--primary); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 700; font-size: 1.1rem; cursor: pointer; }
 
         .success-overlay { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: white; z-index: 3000; display: flex; align-items: center; justify-content: center; }
         .success-modal { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-        .order-id-badge { background: #F0F7F0; color: #2e7d32; padding: 8px 20px; border-radius: 50px; font-weight: 800; font-size: 1.2rem; margin-bottom: 20px; }
+        .token-success-badge { background: #FEF3C7; color: #B45309; padding: 6px 18px; border-radius: 50px; font-weight: 900; font-size: 1.1rem; }
+        .order-id-badge { background: #F0F7F0; color: #2e7d32; padding: 8px 20px; border-radius: 50px; font-weight: 800; font-size: 1.2rem; }
       `}</style>
     </div>
   );
@@ -698,14 +1092,24 @@ const UnifiedLogin = ({ onLogin, settings }) => {
   );
 };
 
-const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, setSettings }) => {
+// Expanded Admin Dashboard
+const AdminDashboard = ({ 
+  orders, setOrders, onLogout, menu, setMenu, settings, setSettings, 
+  customers, setCustomers, offers, setOffers, expenses, setExpenses,
+  tableRequests, setTableRequests, onSelectTableForOrder 
+}) => {
   const [tab, setTab] = useState("Orders");
+  const [printingOrder, setPrintingOrder] = useState(null);
+
+  const pendingRequestsCount = tableRequests.filter(r => r.status !== 'Resolved').length;
 
   const updateStatus = (id, status) => {
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
   };
 
-  const [printingOrder, setPrintingOrder] = useState(null);
+  const updateTakeawayStatus = (id, takeawayStatus) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, takeawayStatus } : o));
+  };
 
   const handlePrint = (order) => {
     setPrintingOrder(order);
@@ -715,42 +1119,176 @@ const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, 
     }, 500);
   };
 
+  const sendWhatsAppBill = (order) => {
+    const mob = order.customerMobile || "9876543210";
+    const cleanMob = mob.replace(/\D/g, '');
+    const formattedMob = cleanMob.length === 10 ? `91${cleanMob}` : cleanMob;
+    
+    const itemsStr = order.items.map(i => `${i.quantity}x ${i.name} = ₹${i.price * i.quantity}`).join('\n');
+    const msg = `🧾 *${settings.name} - Digital Receipt*\nOrder: #${order.id} | ${order.tokenNumber ? `TOKEN #${order.tokenNumber}` : `Table: ${order.tableNumber}`}\nDate: ${new Date().toLocaleString()}\n\nItems:\n${itemsStr}\n--------------------\nSubtotal: ₹${order.subtotal || order.total}\n${order.packagingCharge > 0 ? `Packaging Container Fee: +₹${order.packagingCharge}\n` : ''}GST (${settings.gst}%): ₹${Math.round(((order.subtotal || order.total) * settings.gst)/100)}\nDiscount: ₹${order.discountAmount || 0}\n*TOTAL PAYABLE: ₹${order.netTotal || order.total}*\nPayment Method: ${order.paymentMethod || 'Cash'}\n--------------------\nThank you for dining with us! 🙏`;
+    
+    const url = `https://wa.me/${formattedMob}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="dashboard">
       <div className="dash-header">
         <div className="row">
-          <h2>Admin Panel</h2>
-          <button onClick={onLogout}><LogOut size={20} /></button>
+          <div className="brand-title">
+            <h2>{settings.name} Admin Panel</h2>
+          </div>
+          <button className="btn-logout" onClick={onLogout} title="Logout"><LogOut size={18} /> Logout</button>
         </div>
+        
         <div className="dash-tabs">
           <button className={tab === 'Orders' ? 'active' : ''} onClick={() => setTab('Orders')}><ShoppingBag size={14}/> Orders</button>
-          <button className={tab === 'Menu' ? 'active' : ''} onClick={() => setTab('Menu')}><Package size={14}/> Menu</button>
-          <button className={tab === 'Stats' ? 'active' : ''} onClick={() => setTab('Stats')}><TrendingUp size={14}/> Stats</button>
+          <button className={tab === 'Takeaway' ? 'active' : ''} onClick={() => setTab('Takeaway')}><Box size={14}/> Parcel Pipeline</button>
+          <button className={tab === 'Tables' ? 'active' : ''} onClick={() => setTab('Tables')}><Table size={14}/> Tables Grid</button>
+          <button className={tab === 'QRGen' ? 'active' : ''} onClick={() => setTab('QRGen')}><QrCode size={14}/> QR Generator</button>
+          <button className={tab === 'Assistance' ? 'active' : ''} onClick={() => setTab('Assistance')}>
+            <Bell size={14}/> Calls
+            {pendingRequestsCount > 0 && <span className="tab-badge">{pendingRequestsCount}</span>}
+          </button>
+          <button className={tab === 'CRM' ? 'active' : ''} onClick={() => setTab('CRM')}><Users size={14}/> Customer CRM</button>
+          <button className={tab === 'WhatsApp' ? 'active' : ''} onClick={() => setTab('WhatsApp')}><MessageSquare size={14}/> WhatsApp</button>
+          <button className={tab === 'Offers' ? 'active' : ''} onClick={() => setTab('Offers')}><TagIcon size={14}/> Offers & Coupons</button>
+          <button className={tab === 'Reports' ? 'active' : ''} onClick={() => setTab('Reports')}><TrendingUp size={14}/> Reports & Analytics</button>
+          <button className={tab === 'Expenses' ? 'active' : ''} onClick={() => setTab('Expenses')}><DollarSign size={14}/> Expenses</button>
+          <button className={tab === 'Menu' ? 'active' : ''} onClick={() => setTab('Menu')}><Package size={14}/> Menu Mgmt</button>
           <button className={tab === 'Settings' ? 'active' : ''} onClick={() => setTab('Settings')}><Settings size={14}/> Settings</button>
         </div>
       </div>
+
       <div className="dash-content">
         {tab === 'Orders' && (
           <div className="order-list">
             {orders.map(o => (
-              <div key={o.id} className={`order-card ${o.status.toLowerCase()}`}>
-                <div className="card-meta"><span>T{o.tableNumber}</span> <span>₹{o.total}</span></div>
-                <div className="card-items">{o.items.map((i, idx) => <div key={idx}>{i.quantity}x {i.name}</div>)}</div>
+              <div key={o.id} className={`order-card ${(o.status || 'Pending').toLowerCase()}`}>
+                <div className="card-top">
+                  <span className="table-tag">
+                    {o.tokenNumber ? `Token #${o.tokenNumber}` : `T-${o.tableNumber}`} ({o.orderType || 'Dine-in'})
+                  </span>
+                  <span className={`status-badge ${(o.status || 'Pending').toLowerCase()}`}>{o.status}</span>
+                </div>
+                <div className="card-meta">
+                  <span>Order #{o.id}</span>
+                  <strong className="net-amt">₹{o.netTotal || o.total}</strong>
+                </div>
+
+                {o.customerMobile && (
+                  <div className="cust-row-info">
+                    📱 {o.customerName ? `${o.customerName} (${o.customerMobile})` : o.customerMobile}
+                  </div>
+                )}
+
+                <div className="card-items">
+                  {o.items.map((i, idx) => <div key={idx}>{i.quantity}x {i.name} (₹{i.price * i.quantity})</div>)}
+                </div>
+
+                {o.packagingCharge > 0 && <div className="pkg-fee-tag">📦 Packaging Fee: +₹{o.packagingCharge}</div>}
+                {o.discountAmount > 0 && <div className="discount-tag-row">🏷️ Discount ({o.discountCode}): -₹{o.discountAmount}</div>}
+
                 <div className="card-btns">
                   {o.status === 'Pending' && <button className="btn-c" onClick={() => updateStatus(o.id, 'Confirmed')}>Confirm</button>}
                   {o.status === 'Confirmed' && <button className="btn-r" onClick={() => updateStatus(o.id, 'Ready')}>Ready</button>}
-                  <button className="btn-p" style={{background: '#666'}} onClick={() => handlePrint(o)}>Print Bill</button>
+                  <button className="btn-wa-bill" onClick={() => sendWhatsAppBill(o)}>
+                    <Send size={13} /> WA Bill
+                  </button>
+                  <button className="btn-p" onClick={() => handlePrint(o)}>
+                    <Printer size={13} /> Print
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
+
+        {tab === 'Takeaway' && (
+          <TakeawayManagement 
+            orders={orders}
+            onUpdateTakeawayStatus={updateTakeawayStatus}
+            onPrintBill={handlePrint}
+            settings={settings}
+          />
+        )}
+
+        {tab === 'Tables' && (
+          <LiveTableOverview 
+            orders={orders} 
+            onSelectTable={(tblNo, ord) => onSelectTableForOrder(tblNo, ord)}
+            onPrintBill={handlePrint}
+          />
+        )}
+
+        {tab === 'QRGen' && (
+          <QRTableGenerator settings={settings} totalTablesCount={20} />
+        )}
+
+        {tab === 'Assistance' && (
+          <CustomerAssistance 
+            requests={tableRequests}
+            onResolveRequest={(reqId) => {
+              setTableRequests(tableRequests.map(r => r.id === reqId ? { ...r, status: 'Resolved', resolvedAt: new Date().toISOString() } : r));
+            }}
+            onClearAll={() => setTableRequests(tableRequests.filter(r => r.status !== 'Resolved'))}
+          />
+        )}
+
+        {tab === 'CRM' && (
+          <CustomerCRM 
+            customers={customers} 
+            orders={orders} 
+            onSaveCustomer={(cust) => {
+              const existingIdx = customers.findIndex(c => c.id === cust.id || c.mobile === cust.mobile);
+              if (existingIdx !== -1) {
+                const updated = [...customers];
+                updated[existingIdx] = cust;
+                setCustomers(updated);
+              } else {
+                setCustomers([cust, ...customers]);
+              }
+            }}
+            onSendWhatsApp={(cust, tpl) => {
+              setTab('WhatsApp');
+            }}
+          />
+        )}
+
+        {tab === 'WhatsApp' && (
+          <CustomerCommunication 
+            customers={customers} 
+            orders={orders} 
+            settings={settings} 
+          />
+        )}
+
+        {tab === 'Offers' && (
+          <OffersEngine 
+            offers={offers}
+            onSaveOffer={(newOff) => setOffers([newOff, ...offers])}
+            onDeleteOffer={(offId) => setOffers(offers.filter(o => o.id !== offId))}
+            onToggleOffer={(offId) => setOffers(offers.map(o => o.id === offId ? { ...o, isActive: !o.isActive } : o))}
+          />
+        )}
+
+        {tab === 'Reports' && (
+          <ReportsAnalytics orders={orders} expenses={expenses} customers={customers} />
+        )}
+
+        {tab === 'Expenses' && (
+          <ExpenseTracker 
+            expenses={expenses}
+            onAddExpense={(exp) => setExpenses([exp, ...expenses])}
+            onDeleteExpense={(expId) => setExpenses(expenses.filter(e => e.id !== expId))}
+          />
+        )}
+
         {tab === 'Menu' && <MenuMgmt menu={menu} setMenu={setMenu} />}
-        {tab === 'Stats' && <Reports orders={orders} />}
         {tab === 'Settings' && <SettingsEditor settings={settings} setSettings={setSettings} />}
       </div>
 
-      {/* Printable Receipt */}
+      {/* Printable Thermal Receipt */}
       {printingOrder && (
         <div className="print-only">
           <div className="receipt-header">
@@ -759,8 +1297,15 @@ const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, 
             <hr />
           </div>
           <div className="receipt-meta">
-            <p><strong>Table:</strong> {printingOrder.tableNumber}</p>
-            <p><strong>Order ID:</strong> {printingOrder.id}</p>
+            {printingOrder.tokenNumber ? (
+              <p style={{fontSize: '16px', fontWeight: 'bold'}}>PARCEL TOKEN #{printingOrder.tokenNumber}</p>
+            ) : (
+              <p><strong>Table:</strong> {printingOrder.tableNumber}</p>
+            )}
+            <p><strong>Order ID:</strong> #{printingOrder.id}</p>
+            <p><strong>Order Type:</strong> {printingOrder.orderType || 'Dine-in'}</p>
+            {printingOrder.estimatedPickupTime && <p><strong>Pickup Time:</strong> {printingOrder.estimatedPickupTime}</p>}
+            {printingOrder.customerMobile && <p><strong>Customer:</strong> {printingOrder.customerName} ({printingOrder.customerMobile})</p>}
             <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
             <hr />
           </div>
@@ -784,9 +1329,12 @@ const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, 
           </table>
           <hr />
           <div className="receipt-total">
-            <div className="row"><span>Subtotal</span><span>₹{printingOrder.total}</span></div>
-            <div className="row"><span>GST ({settings.gst}%)</span><span>₹{Math.round(printingOrder.total * settings.gst / 100)}</span></div>
-            <div className="row grand"><span>Total</span><span>₹{printingOrder.total + Math.round(printingOrder.total * settings.gst / 100)}</span></div>
+            <div className="row"><span>Subtotal</span><span>₹{printingOrder.subtotal || printingOrder.total}</span></div>
+            {printingOrder.packagingCharge > 0 && <div className="row"><span>Packaging Container Fee</span><span>+ ₹{printingOrder.packagingCharge}</span></div>}
+            {printingOrder.discountAmount > 0 && <div className="row"><span>Discount ({printingOrder.discountCode})</span><span>- ₹{printingOrder.discountAmount}</span></div>}
+            <div className="row"><span>GST ({settings.gst}%)</span><span>₹{Math.round(((printingOrder.subtotal || printingOrder.total) * settings.gst) / 100)}</span></div>
+            <div className="row grand"><span>NET PAYABLE TOTAL</span><span>₹{printingOrder.netTotal || printingOrder.total}</span></div>
+            <div className="row"><span>Payment Method</span><span>{printingOrder.paymentMethod || 'Cash'}</span></div>
           </div>
           <div className="receipt-footer">
             <p>Thank you! Visit Again</p>
@@ -796,25 +1344,44 @@ const AdminDashboard = ({ orders, setOrders, onLogout, menu, setMenu, settings, 
 
       <style>{`
         .dashboard { min-height: 100vh; background: #F8F8F8; }
-        .dash-header { background: white; padding: 20px 16px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .dash-header .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .dash-header { background: white; padding: 20px 24px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .dash-header .row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .btn-logout { background: #FEF2F2; color: #EF4444; border: 1px solid #FEE2E2; padding: 8px 14px; border-radius: 10px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
         .dash-tabs { display: flex; overflow-x: auto; gap: 8px; padding-bottom: 5px; }
-        .dash-tabs button { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 12px; border: none; background: #F5F5F5; font-size: 0.8rem; font-weight: 700; color: #666; }
-        .dash-tabs button.active { background: var(--accent); color: white; }
-        
-        .dash-content { padding: 16px; padding-bottom: 100px; }
-        .order-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; border-left: 4px solid #DDD; }
+        .dash-tabs button { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 12px; border: none; background: #F5F5F5; font-size: 0.8rem; font-weight: 700; color: #666; cursor: pointer; position: relative; }
+        .dash-tabs button.active { background: #1A1208; color: white; }
+        .tab-badge { background: #EF4444; color: white; border-radius: 50%; font-size: 0.65rem; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+
+        .dash-content { padding: 20px 24px; padding-bottom: 100px; }
+        .order-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+        .order-card { background: white; border-radius: 18px; padding: 18px; border-left: 5px solid #DDD; box-shadow: 0 2px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 10px; }
         .order-card.pending { border-left-color: #EAB308; }
         .order-card.confirmed { border-left-color: #3B82F6; }
         .order-card.ready { border-left-color: #22C55E; }
-        .card-top { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .card-top .badge { font-size: 0.6rem; font-weight: 800; background: #F0F0F0; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
-        .card-meta { display: flex; gap: 15px; font-size: 0.8rem; font-weight: 700; color: #666; margin-bottom: 10px; }
-        .card-items { border-top: 1px solid #F5F5F5; padding-top: 10px; font-size: 0.85rem; margin-bottom: 15px; }
-        .card-btns { display: flex; gap: 10px; }
-        .card-btns button { flex: 1; padding: 10px; border: none; border-radius: 10px; font-weight: 700; color: white; }
+
+        .card-top { display: flex; justify-content: space-between; align-items: center; }
+        .table-tag { font-weight: 800; font-size: 0.95rem; color: #1E293B; }
+        .status-badge { font-size: 0.7rem; font-weight: 800; padding: 3px 10px; border-radius: 50px; text-transform: uppercase; }
+        .status-badge.pending { background: #FEF08A; color: #854D0E; }
+        .status-badge.confirmed { background: #BFDBFE; color: #1E40AF; }
+        .status-badge.ready { background: #BBF7D0; color: #166534; }
+
+        .card-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748B; font-weight: 600; }
+        .net-amt { font-size: 1.1rem; color: #0F172A; }
+
+        .cust-row-info { font-size: 0.8rem; color: #E8621A; background: #FFF7ED; padding: 6px 10px; border-radius: 8px; }
+
+        .card-items { border-top: 1px solid #F5F5F5; padding-top: 10px; font-size: 0.85rem; color: #334155; display: flex; flex-direction: column; gap: 4px; }
+        .pkg-fee-tag { font-size: 0.75rem; color: #C2410C; font-weight: 700; background: #FFF7ED; padding: 4px 8px; border-radius: 6px; width: max-content; }
+        .discount-tag-row { font-size: 0.75rem; color: #16A34A; font-weight: 700; background: #DCFCE7; padding: 4px 8px; border-radius: 6px; width: max-content; }
+
+        .card-btns { display: flex; gap: 6px; margin-top: 6px; }
+        .card-btns button { flex: 1; padding: 8px; border: none; border-radius: 8px; font-weight: 700; font-size: 0.75rem; color: white; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
         .btn-c { background: #3B82F6; }
         .btn-r { background: #22C55E; }
+        .btn-wa-bill { background: #25D366; }
+        .btn-p { background: #475569; }
 
         .print-only { display: none; }
         @media print {
@@ -993,29 +1560,35 @@ const MenuMgmt = ({ menu, setMenu }) => {
   );
 };
 
-const Reports = ({ orders }) => (
-  <div className="stats">
-    <div className="stat-card"><span>Revenue</span><strong>₹{orders.reduce((a,b)=>a+b.total,0)}</strong></div>
-    <div className="stat-card"><span>Orders</span><strong>{orders.length}</strong></div>
-    <style>{`
-      .stat-card { background: white; padding: 30px; border-radius: 24px; text-align: center; margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
-      .stat-card strong { font-size: 2rem; color: var(--primary); }
-    `}</style>
-  </div>
-);
-
 const SettingsEditor = ({ settings, setSettings }) => {
   const save = () => {
-    alert("Settings saved!");
+    alert("Settings saved successfully!");
   };
   return (
     <div className="settings">
       <div className="edit-box">
+        <h3>Shop Settings & QR Ordering Mode</h3>
+        
         <label>Shop Name</label>
         <input value={settings.name} onChange={e => setSettings({...settings, name: e.target.value})} className="input-field" />
+        
         <label>GST %</label>
         <input type="number" value={settings.gst} onChange={e => setSettings({...settings, gst: parseInt(e.target.value) || 0})} className="input-field" />
-        <button onClick={save} className="btn-primary">Update Shop</button>
+        
+        <label>Default Packaging Container Fee (₹)</label>
+        <input type="number" value={settings.packagingCharge || 15} onChange={e => setSettings({...settings, packagingCharge: parseInt(e.target.value) || 0})} className="input-field" />
+
+        <label style={{marginTop: '10px', fontWeight: 'bold'}}>📱 QR Table Ordering Mode (Admin Mode)</label>
+        <select 
+          value={settings.orderingMode || 'SELF_ORDER'} 
+          onChange={e => setSettings({...settings, orderingMode: e.target.value})}
+          style={{padding: '12px', borderRadius: '10px', border: '1px solid #CCC', background: 'white', fontSize: '0.95rem'}}
+        >
+          <option value="SELF_ORDER">Menu + Self Ordering (Customers place order directly)</option>
+          <option value="MENU_ONLY">Menu Only (Read-only menu, staff places order)</option>
+        </select>
+
+        <button onClick={save} className="btn-primary" style={{marginTop: '15px'}}>Update Shop Settings</button>
       </div>
     </div>
   );
