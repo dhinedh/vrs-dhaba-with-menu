@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import heroBg from './assets/hero-bg.png';
 
 const INITIAL_MENU = [
+  // 01. ROTI VARIETIES
   { id: "1", no: "101", name: "Roti", price: 15, veg: true, icon: "🫓", category: "Roti Varieties" },
   { id: "2", no: "102", name: "Butter Roti", price: 20, veg: true, icon: "🫓", category: "Roti Varieties" },
   { id: "3", no: "103", name: "Butter Naan", price: 50, veg: true, icon: "🫓", category: "Roti Varieties" },
@@ -29,6 +30,8 @@ const INITIAL_MENU = [
   { id: "5", no: "105", name: "Plain Naan", price: 40, veg: true, icon: "🫓", category: "Roti Varieties" },
   { id: "6", no: "106", name: "Garlic Naan", price: 80, veg: true, icon: "🫓", category: "Roti Varieties" },
   { id: "7", no: "107", name: "Half Naan", price: 25, veg: true, icon: "🫓", category: "Roti Varieties" },
+
+  // 02. CHICKEN GRAVY
   { id: "8", no: "201", name: "Chicken Masala", price: 150, veg: false, icon: "🍗", category: "Chicken Gravy" },
   { id: "9", no: "202", name: "Pepper Chicken", price: 180, veg: false, icon: "🍗", category: "Chicken Gravy" },
   { id: "10", no: "203", name: "Ginger Chicken", price: 170, veg: false, icon: "🍗", category: "Chicken Gravy" },
@@ -39,13 +42,19 @@ const INITIAL_MENU = [
   { id: "15", no: "208", name: "Chilli Chicken", price: 200, veg: false, icon: "🍗", category: "Chicken Gravy" },
   { id: "16", no: "209", name: "Butter Chicken", price: 210, veg: false, icon: "🍗", category: "Chicken Gravy" },
   { id: "17", no: "210", name: "Andhra Chicken", price: 230, veg: false, icon: "🍗", category: "Chicken Gravy" },
+
+  // 03. EGG VARIETIES
   { id: "18", no: "301", name: "Egg Podimas", price: 50, veg: false, icon: "🍳", category: "Egg Varieties" },
   { id: "19", no: "302", name: "Egg Keema", price: 110, veg: false, icon: "🍳", category: "Egg Varieties" },
+
+  // 04. GRAVY
   { id: "20", no: "401", name: "Mutton Masala", price: 250, veg: false, icon: "🍲", category: "Gravy" },
   { id: "21", no: "402", name: "Kadai Masala", price: 170, veg: false, icon: "🍲", category: "Gravy" },
   { id: "22", no: "403", name: "Prawn Masala", price: 250, veg: false, icon: "🍤", category: "Gravy" },
   { id: "23", no: "404", name: "Squid Masala", price: 250, veg: false, icon: "🦑", category: "Gravy" },
-  { id: "24", no: "405", name: "Naatu Kozhi", price: 220, veg: false, icon: "🍲", category: "Gravy" },
+  { id: "24", no: "405", name: "Naatu Kozhi", price: 220, veg: false, icon: "🍗", category: "Gravy" },
+
+  // 05. VEG VARIETIES
   { id: "25", no: "501", name: "Dal", price: 100, veg: true, icon: "🥣", category: "Veg Varieties" },
   { id: "26", no: "502", name: "Dal Tadka", price: 130, veg: true, icon: "🥣", category: "Veg Varieties" },
   { id: "27", no: "503", name: "Dal Makhani", price: 150, veg: true, icon: "🥣", category: "Veg Varieties" },
@@ -54,23 +63,43 @@ const INITIAL_MENU = [
   { id: "30", no: "506", name: "Paneer Masala", price: 170, veg: true, icon: "🧀", category: "Veg Varieties" },
   { id: "31", no: "507", name: "Mushroom Masala", price: 160, veg: true, icon: "🍄", category: "Veg Varieties" },
   { id: "32", no: "508", name: "Gobi Masala", price: 150, veg: true, icon: "🥦", category: "Veg Varieties" },
+
+  // 06. VEG RICE VARIETIES
   { id: "33", no: "601", name: "Channa Rice", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
   { id: "34", no: "602", name: "Jeera Rice", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
   { id: "35", no: "603", name: "Paneer Rice", price: 170, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
   { id: "36", no: "604", name: "Mushroom Rice", price: 160, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
   { id: "37", no: "605", name: "Special Thayir Sadham", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
-  { id: "38", no: "701", name: "Chicken Rice", price: 120, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "39", no: "702", name: "Dhaba Chicken Rice", price: 130, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "40", no: "703", name: "Kadai Rice", price: 170, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "41", no: "704", name: "Mutton Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "42", no: "705", name: "Prawn Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "43", no: "706", name: "Squid Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "44", no: "707", name: "Naatu Kozhi Rice", price: 220, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "45", no: "708", name: "Egg Rice", price: 110, veg: false, icon: "🍳", category: "Non-Veg Rice & Noodles" },
-  { id: "46", no: "709", name: "Chicken Noodles", price: 120, veg: false, icon: "🍜", category: "Non-Veg Rice & Noodles" },
-  { id: "47", no: "710", name: "Egg Noodles", price: 110, veg: false, icon: "🍜", category: "Non-Veg Rice & Noodles" },
-  { id: "48", no: "801", name: "Gobi Noodles", price: 150, veg: true, icon: "🍜", category: "Noodles" },
-  { id: "49", no: "802", name: "Veg Noodles", price: 100, veg: true, icon: "🍜", category: "Noodles" }
+
+  // 07. NON-VEG RICE VARIETIES
+  { id: "38", no: "701", name: "Chicken Rice", price: 120, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "39", no: "702", name: "Dhaba Chicken Rice", price: 130, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "40", no: "703", name: "Kadai Rice", price: 170, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "41", no: "704", name: "Mutton Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "42", no: "705", name: "Prawn Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "43", no: "706", name: "Squid Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "44", no: "707", name: "Naatu Kozhi Rice", price: 220, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "45", no: "708", name: "Egg Rice", price: 110, veg: false, icon: "🍳", category: "Non-Veg Rice Varieties" },
+
+  // 08. NOODLES
+  { id: "46", no: "801", name: "Chicken Noodles", price: 120, veg: false, icon: "🍜", category: "Noodles" },
+  { id: "47", no: "802", name: "Egg Noodles", price: 110, veg: false, icon: "🍜", category: "Noodles" },
+  { id: "48", no: "803", name: "Gobi Noodles", price: 150, veg: true, icon: "🍜", category: "Noodles" },
+  { id: "49", no: "804", name: "Veg Noodles", price: 100, veg: true, icon: "🍜", category: "Noodles" },
+
+  // 09. CHICKEN 65 VARIETIES
+  { id: "50", no: "901", name: "Chicken 65", price: 160, veg: false, icon: "🍗", category: "Chicken 65 Varieties" },
+  { id: "51", no: "902", name: "Chicken Lollipop", price: 180, veg: false, icon: "🍗", category: "Chicken 65 Varieties" },
+  { id: "52", no: "903", name: "Tandoori Chicken", price: 110, veg: false, icon: "🍗", category: "Chicken 65 Varieties" },
+
+  // 10. OTHER NON-VEG VARIETIES
+  { id: "53", no: "1001", name: "Quail 65", price: 150, veg: false, icon: "🍗", category: "Other Non-Veg Varieties" },
+  { id: "54", no: "1002", name: "Prawn 65", price: 250, veg: false, icon: "🍤", category: "Other Non-Veg Varieties" },
+
+  // 11. VEG 65 VARIETIES
+  { id: "55", no: "1101", name: "Paneer 65", price: 200, veg: true, icon: "🧀", category: "Veg 65 Varieties" },
+  { id: "56", no: "1102", name: "Mushroom 65", price: 160, veg: true, icon: "🍄", category: "Veg 65 Varieties" },
+  { id: "57", no: "1103", name: "Gobi 65", price: 150, veg: true, icon: "🥦", category: "Veg 65 Varieties" }
 ];
 
 const INITIAL_SETTINGS = {

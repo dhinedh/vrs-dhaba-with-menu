@@ -50,6 +50,7 @@ import { DeliveryManagement } from './components/DeliveryManagement';
 import { AdminConsole } from './components/AdminConsole';
 
 const INITIAL_MENU = [
+  // 01. ROTI VARIETIES
   { id: "1", no: "101", name: "Roti", price: 15, veg: true, icon: "🫓", category: "Roti Varieties" },
   { id: "2", no: "102", name: "Butter Roti", price: 20, veg: true, icon: "🫓", category: "Roti Varieties" },
   { id: "3", no: "103", name: "Butter Naan", price: 50, veg: true, icon: "🫓", category: "Roti Varieties" },
@@ -57,6 +58,8 @@ const INITIAL_MENU = [
   { id: "5", no: "105", name: "Plain Naan", price: 40, veg: true, icon: "🫓", category: "Roti Varieties" },
   { id: "6", no: "106", name: "Garlic Naan", price: 80, veg: true, icon: "🫓", category: "Roti Varieties" },
   { id: "7", no: "107", name: "Half Naan", price: 25, veg: true, icon: "🫓", category: "Roti Varieties" },
+
+  // 02. CHICKEN GRAVY
   { id: "8", no: "201", name: "Chicken Masala", price: 150, veg: false, icon: "🍗", category: "Chicken Gravy" },
   { id: "9", no: "202", name: "Pepper Chicken", price: 180, veg: false, icon: "🍗", category: "Chicken Gravy" },
   { id: "10", no: "203", name: "Ginger Chicken", price: 170, veg: false, icon: "🍗", category: "Chicken Gravy" },
@@ -67,13 +70,19 @@ const INITIAL_MENU = [
   { id: "15", no: "208", name: "Chilli Chicken", price: 200, veg: false, icon: "🍗", category: "Chicken Gravy" },
   { id: "16", no: "209", name: "Butter Chicken", price: 210, veg: false, icon: "🍗", category: "Chicken Gravy" },
   { id: "17", no: "210", name: "Andhra Chicken", price: 230, veg: false, icon: "🍗", category: "Chicken Gravy" },
+
+  // 03. EGG VARIETIES
   { id: "18", no: "301", name: "Egg Podimas", price: 50, veg: false, icon: "🍳", category: "Egg Varieties" },
   { id: "19", no: "302", name: "Egg Keema", price: 110, veg: false, icon: "🍳", category: "Egg Varieties" },
+
+  // 04. GRAVY
   { id: "20", no: "401", name: "Mutton Masala", price: 250, veg: false, icon: "🍲", category: "Gravy" },
   { id: "21", no: "402", name: "Kadai Masala", price: 170, veg: false, icon: "🍲", category: "Gravy" },
   { id: "22", no: "403", name: "Prawn Masala", price: 250, veg: false, icon: "🍤", category: "Gravy" },
   { id: "23", no: "404", name: "Squid Masala", price: 250, veg: false, icon: "🦑", category: "Gravy" },
-  { id: "24", no: "405", name: "Naatu Kozhi", price: 220, veg: false, icon: "🍲", category: "Gravy" },
+  { id: "24", no: "405", name: "Naatu Kozhi", price: 220, veg: false, icon: "🍗", category: "Gravy" },
+
+  // 05. VEG VARIETIES
   { id: "25", no: "501", name: "Dal", price: 100, veg: true, icon: "🥣", category: "Veg Varieties" },
   { id: "26", no: "502", name: "Dal Tadka", price: 130, veg: true, icon: "🥣", category: "Veg Varieties" },
   { id: "27", no: "503", name: "Dal Makhani", price: 150, veg: true, icon: "🥣", category: "Veg Varieties" },
@@ -82,23 +91,43 @@ const INITIAL_MENU = [
   { id: "30", no: "506", name: "Paneer Masala", price: 170, veg: true, icon: "🧀", category: "Veg Varieties" },
   { id: "31", no: "507", name: "Mushroom Masala", price: 160, veg: true, icon: "🍄", category: "Veg Varieties" },
   { id: "32", no: "508", name: "Gobi Masala", price: 150, veg: true, icon: "🥦", category: "Veg Varieties" },
+
+  // 06. VEG RICE VARIETIES
   { id: "33", no: "601", name: "Channa Rice", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
   { id: "34", no: "602", name: "Jeera Rice", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
   { id: "35", no: "603", name: "Paneer Rice", price: 170, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
   { id: "36", no: "604", name: "Mushroom Rice", price: 160, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
   { id: "37", no: "605", name: "Special Thayir Sadham", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties" },
-  { id: "38", no: "701", name: "Chicken Rice", price: 120, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "39", no: "702", name: "Dhaba Chicken Rice", price: 130, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "40", no: "703", name: "Kadai Rice", price: 170, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "41", no: "704", name: "Mutton Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "42", no: "705", name: "Prawn Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "43", no: "706", name: "Squid Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "44", no: "707", name: "Naatu Kozhi Rice", price: 220, veg: false, icon: "🍛", category: "Non-Veg Rice & Noodles" },
-  { id: "45", no: "708", name: "Egg Rice", price: 110, veg: false, icon: "🍳", category: "Non-Veg Rice & Noodles" },
-  { id: "46", no: "709", name: "Chicken Noodles", price: 120, veg: false, icon: "🍜", category: "Non-Veg Rice & Noodles" },
-  { id: "47", no: "710", name: "Egg Noodles", price: 110, veg: false, icon: "🍜", category: "Non-Veg Rice & Noodles" },
-  { id: "48", no: "801", name: "Gobi Noodles", price: 150, veg: true, icon: "🍜", category: "Noodles" },
-  { id: "49", no: "802", name: "Veg Noodles", price: 100, veg: true, icon: "🍜", category: "Noodles" }
+
+  // 07. NON-VEG RICE VARIETIES
+  { id: "38", no: "701", name: "Chicken Rice", price: 120, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "39", no: "702", name: "Dhaba Chicken Rice", price: 130, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "40", no: "703", name: "Kadai Rice", price: 170, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "41", no: "704", name: "Mutton Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "42", no: "705", name: "Prawn Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "43", no: "706", name: "Squid Rice", price: 250, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "44", no: "707", name: "Naatu Kozhi Rice", price: 220, veg: false, icon: "🍛", category: "Non-Veg Rice Varieties" },
+  { id: "45", no: "708", name: "Egg Rice", price: 110, veg: false, icon: "🍳", category: "Non-Veg Rice Varieties" },
+
+  // 08. NOODLES
+  { id: "46", no: "801", name: "Chicken Noodles", price: 120, veg: false, icon: "🍜", category: "Noodles" },
+  { id: "47", no: "802", name: "Egg Noodles", price: 110, veg: false, icon: "🍜", category: "Noodles" },
+  { id: "48", no: "803", name: "Gobi Noodles", price: 150, veg: true, icon: "🍜", category: "Noodles" },
+  { id: "49", no: "804", name: "Veg Noodles", price: 100, veg: true, icon: "🍜", category: "Noodles" },
+
+  // 09. CHICKEN 65 VARIETIES
+  { id: "50", no: "901", name: "Chicken 65", price: 160, veg: false, icon: "🍗", category: "Chicken 65 Varieties" },
+  { id: "51", no: "902", name: "Chicken Lollipop", price: 180, veg: false, icon: "🍗", category: "Chicken 65 Varieties" },
+  { id: "52", no: "903", name: "Tandoori Chicken", price: 110, veg: false, icon: "🍗", category: "Chicken 65 Varieties" },
+
+  // 10. OTHER NON-VEG VARIETIES
+  { id: "53", no: "1001", name: "Quail 65", price: 150, veg: false, icon: "🍗", category: "Other Non-Veg Varieties" },
+  { id: "54", no: "1002", name: "Prawn 65", price: 250, veg: false, icon: "🍤", category: "Other Non-Veg Varieties" },
+
+  // 11. VEG 65 VARIETIES
+  { id: "55", no: "1101", name: "Paneer 65", price: 200, veg: true, icon: "🧀", category: "Veg 65 Varieties" },
+  { id: "56", no: "1102", name: "Mushroom 65", price: 160, veg: true, icon: "🍄", category: "Veg 65 Varieties" },
+  { id: "57", no: "1103", name: "Gobi 65", price: 150, veg: true, icon: "🥦", category: "Veg 65 Varieties" }
 ];
 
 const INITIAL_SETTINGS = {
@@ -183,12 +212,20 @@ const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   
   // LocalStorage states
+  const MENU_VERSION = "2026_11_v3_57_items";
   const [menu, setMenuState] = useState(() => {
+    const savedVersion = localStorage.getItem("vrs_menu_version");
     const saved = localStorage.getItem("vrs_menu");
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+    if (saved && savedVersion === MENU_VERSION) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= 57) {
+          return parsed;
+        }
+      } catch (e) {}
     }
     localStorage.setItem("vrs_menu", JSON.stringify(INITIAL_MENU));
+    localStorage.setItem("vrs_menu_version", MENU_VERSION);
     return INITIAL_MENU;
   });
 
@@ -269,12 +306,14 @@ const App = () => {
   const [waiterTab, setWaiterTab] = useState("Menu");
   const [editingOrderId, setEditingOrderId] = useState(null);
   const [assistanceSentAlert, setAssistanceSentAlert] = useState(null);
+  const [adminTargetTab, setAdminTargetTab] = useState(null);
 
   // Sync setters
   const setMenu = (val) => {
     setMenuState(prev => {
       const v = typeof val === 'function' ? val(prev) : val;
       localStorage.setItem("vrs_menu", JSON.stringify(v));
+      localStorage.setItem("vrs_menu_version", MENU_VERSION);
       return v;
     });
   };
@@ -326,6 +365,57 @@ const App = () => {
       return v;
     });
   };
+
+  // Real-time cross-tab & storage synchronization for orders
+  useEffect(() => {
+    const syncOrdersFromStorage = () => {
+      try {
+        const saved = localStorage.getItem("vrs_orders");
+        if (saved) {
+          setOrdersState(prev => {
+            if (JSON.stringify(prev) !== saved) {
+              try {
+                return JSON.parse(saved);
+              } catch (e) {
+                return prev;
+              }
+            }
+            return prev;
+          });
+        }
+      } catch (e) {}
+    };
+
+    const handleStorageChange = (e) => {
+      if (!e.key || e.key === "vrs_orders") {
+        syncOrdersFromStorage();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    const pollInterval = setInterval(syncOrdersFromStorage, 1000);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      clearInterval(pollInterval);
+    };
+  }, []);
+
+  const isOrderBilledOrClosed = (o) => {
+    if (!o) return false;
+    const s = String(o.status || '').toLowerCase().trim();
+    const ps = String(o.paymentStatus || '').toLowerCase().trim();
+    const ts = String(o.takeawayStatus || '').toLowerCase().trim();
+    if (s === 'billed' || s === 'paid' || s === 'closed' || s === 'completed' || s === 'settled' || s === 'cancelled') return true;
+    if (o.isBilled || o.isClosed || o.billedAt) return true;
+    if (ps === 'paid' && s !== 'pending' && s !== 'kitchen' && s !== 'preparing' && s !== 'confirmed') return true;
+    if (ts === 'billing' || ts === 'completed' || ts === 'billed') return true;
+    return false;
+  };
+
+  const activeWaiterOrders = useMemo(() => {
+    return orders.filter(o => !isOrderBilledOrClosed(o));
+  }, [orders]);
 
   const categories = useMemo(() => {
     const cats = [...new Set(menu.map(item => item.category))];
@@ -495,9 +585,12 @@ const App = () => {
     const takeawayOrdersCount = orders.filter(o => o.orderType === 'Takeaway' || o.tokenNumber).length;
     const newTokenNumber = orderType === 'Takeaway' ? `TK-${String(takeawayOrdersCount + 1).padStart(2, '0')}` : '';
 
+    const cleanInputTable = String(tableNumber || '').replace(/^-+/, '').trim();
+    const newOrderId = editingOrderId || ("ORD-" + Math.floor(100 + Math.random() * 900));
+
     const newOrderObj = {
-      id: editingOrderId || ("ORD-" + Math.floor(100 + Math.random() * 900)),
-      tableNumber: orderType === 'Takeaway' ? 'Takeaway' : tableNumber.toString(),
+      id: newOrderId,
+      tableNumber: orderType === 'Takeaway' ? 'Takeaway' : (cleanInputTable || tableNumber.toString()),
       tokenNumber: newTokenNumber,
       items: itemsArray,
       subtotal: cartSubtotal,
@@ -510,11 +603,11 @@ const App = () => {
       customerName: customerName || "Guest Customer",
       orderType,
       estimatedPickupTime: orderType === 'Takeaway' ? estimatedPickupTime : '',
-      takeawayStatus: orderType === 'Takeaway' ? 'Order' : 'Order',
+      takeawayStatus: orderType === 'Takeaway' ? 'Order' : '',
       waiterName: userRole === 'waiter' ? 'Staff' : 'Counter Admin',
       paymentMethod,
       notes: specialNotes,
-      status: 'Pending',
+      status: 'Confirmed',
       timestamp: new Date().toISOString()
     };
 
@@ -523,11 +616,10 @@ const App = () => {
       createdOrUpdatedOrder = newOrderObj;
       setEditingOrderId(null);
     } else {
-      const activeOrderIndex = updatedOrders.findIndex(o => 
-        o.tableNumber.toString() === tableNumber.toString() && 
-        o.status !== 'Billed' && 
-        orderType === 'Dine-in'
-      );
+      const activeOrderIndex = updatedOrders.findIndex(o => {
+        const cleanTbl = String(o.tableNumber || '').replace(/^-+/, '').trim();
+        return cleanTbl === cleanInputTable && !isOrderBilledOrClosed(o) && orderType === 'Dine-in';
+      });
 
       if (activeOrderIndex !== -1) {
         const activeOrder = updatedOrders[activeOrderIndex];
@@ -555,7 +647,7 @@ const App = () => {
           customerMobile: customerMobile || activeOrder.customerMobile,
           customerName: customerName || activeOrder.customerName,
           notes: activeOrder.notes ? activeOrder.notes + (specialNotes ? " | " + specialNotes : "") : specialNotes,
-          status: 'Pending',
+          status: 'Confirmed',
           timestamp: new Date().toISOString()
         };
 
@@ -598,6 +690,28 @@ const App = () => {
     setShowCart(false);
     setSpecialNotes("");
     setAppliedOffer(null);
+    setEditingOrderId(null);
+
+    // Persist to backend server API
+    try {
+      fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createdOrUpdatedOrder)
+      }).catch(() => {});
+    } catch (e) {}
+
+    // Send and redirect directly to Admin Side Order Page
+    setUserRole('admin');
+    setIsLoggedIn(true);
+    localStorage.setItem('userRole', 'admin');
+    localStorage.setItem('isLoggedIn', 'true');
+    setAdminTargetTab({
+      tab: 'order',
+      subTab: 'all-orders',
+      newOrderId: createdOrUpdatedOrder.id,
+      timestamp: Date.now()
+    });
   };
 
   if (!isLoggedIn) {
@@ -624,12 +738,17 @@ const App = () => {
             localStorage.removeItem("isLoggedIn");
             localStorage.removeItem("userRole");
           }} 
+          onSwitchRole={(role) => {
+            setUserRole(role);
+            localStorage.setItem("userRole", role);
+          }}
           menu={menu} setMenu={setMenu}
           settings={settings} setSettings={setSettings}
           customers={customers} setCustomers={setCustomers}
           offers={offers} setOffers={setOffers}
           expenses={expenses} setExpenses={setExpenses}
           tableRequests={tableRequests} setTableRequests={setTableRequests}
+          adminTargetTab={adminTargetTab}
           onSelectTableForOrder={(tblNo, ord) => {
             setTableNumber(tblNo);
             setOrderType("Dine-in");
@@ -800,38 +919,111 @@ const App = () => {
         </div>
       ) : (
         <div className="active-orders-section" style={{padding: '20px'}}>
-          <h2>Active Orders</h2>
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px'}}>
+            <h2 style={{fontSize: '1.25rem', fontWeight: '800', color: '#0F172A', margin: 0}}>Active Orders</h2>
+            <span style={{
+              fontSize: '0.8rem',
+              fontWeight: '700',
+              background: '#FFF7ED',
+              color: '#EA580C',
+              padding: '4px 10px',
+              borderRadius: '50px',
+              border: '1px solid #FFEDD5'
+            }}>
+              {activeWaiterOrders.length} {activeWaiterOrders.length === 1 ? 'Live Table' : 'Live Tables'}
+            </span>
+          </div>
+
           <div className="order-list">
-            {orders.filter(o => o.status !== 'Billed').map(o => (
-              <div key={o.id} className="order-card" style={{background: 'white', padding: '15px', borderRadius: '15px', marginBottom: '10px', border: '1px solid #eee'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                  <strong>{o.orderType === 'Takeaway' ? `Token #${o.tokenNumber || o.id}` : `Table ${o.tableNumber}`} ({o.orderType || 'Dine-in'})</strong>
-                  <span style={{fontSize: '0.8rem', color: '#666'}}>{o.takeawayStatus || o.status}</span>
-                </div>
-                <div style={{fontSize: '0.9rem', margin: '5px 0'}}>
-                  {o.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
-                </div>
-                {o.customerMobile && <div style={{fontSize: '0.8rem', color: '#E8621A'}}>📱 {o.customerName} ({o.customerMobile})</div>}
-                <button 
-                  className="btn-edit-order" 
-                  style={{background: '#E8621A', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: '600', marginTop: '10px'}}
-                  onClick={() => {
-                    const newCart = {};
-                    o.items.forEach(i => newCart[i.id] = i.quantity);
-                    setCart(newCart);
-                    setTableNumber(o.tableNumber);
-                    setEditingOrderId(o.id);
-                    setCustomerMobile(o.customerMobile || "");
-                    setCustomerName(o.customerName || "");
-                    setOrderType(o.orderType || "Dine-in");
-                    setWaiterTab("Menu");
-                    setShowCart(true);
-                  }}
-                >
-                  Edit / Add Items
-                </button>
+            {activeWaiterOrders.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '44px 20px',
+                background: '#FFFFFF',
+                borderRadius: '20px',
+                border: '1.5px dashed #E2E8F0',
+                marginTop: '10px',
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.02)'
+              }}>
+                <div style={{ fontSize: '2.4rem', marginBottom: '10px' }}>🧾</div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0F172A', margin: '0 0 6px 0' }}>
+                  No Active Orders
+                </h3>
+                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: 0, lineHeight: 1.5 }}>
+                  All bills have been settled & closed by the admin.
+                </p>
               </div>
-            ))}
+            ) : (
+              activeWaiterOrders.map(o => {
+                const cleanTable = String(o.tableNumber || '').replace(/^-+/, '').trim();
+                const displayTitle = o.orderType === 'Takeaway' 
+                  ? `Token #${o.tokenNumber || o.id}` 
+                  : (cleanTable ? `Table ${cleanTable}` : 'Dine-in');
+                const displayStatus = o.orderType === 'Takeaway' ? (o.takeawayStatus || o.status || 'Active') : (o.status || 'Active');
+
+                return (
+                  <div key={o.id} className="order-card" style={{
+                    background: 'white', 
+                    padding: '16px', 
+                    borderRadius: '16px', 
+                    marginBottom: '12px', 
+                    border: '1px solid #F1F5F9',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.03)'
+                  }}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                      <strong style={{fontSize: '1rem', color: '#0F172A'}}>{displayTitle} ({o.orderType || 'Dine-in'})</strong>
+                      <span style={{
+                        fontSize: '0.78rem',
+                        fontWeight: '700',
+                        color: displayStatus === 'Preparing' ? '#D97706' : (displayStatus === 'Ready' ? '#059669' : (displayStatus === 'Billed' ? '#64748B' : '#EA580C')),
+                        background: displayStatus === 'Preparing' ? '#FEF3C7' : (displayStatus === 'Ready' ? '#D1FAE5' : (displayStatus === 'Billed' ? '#F1F5F9' : '#FFF7ED')),
+                        padding: '4px 10px',
+                        borderRadius: '50px'
+                      }}>
+                        {displayStatus}
+                      </span>
+                    </div>
+                    <div style={{fontSize: '0.9rem', margin: '8px 0', color: '#334155', lineHeight: 1.4}}>
+                      {o.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                    </div>
+                    {o.customerMobile && (
+                      <div style={{fontSize: '0.8rem', color: '#EA580C', fontWeight: '600', marginBottom: '8px'}}>
+                        📱 {o.customerName} ({o.customerMobile})
+                      </div>
+                    )}
+                    <button 
+                      className="btn-edit-order" 
+                      style={{
+                        background: '#EA580C', 
+                        color: 'white', 
+                        border: 'none', 
+                        padding: '9px 18px', 
+                        borderRadius: '10px', 
+                        fontWeight: '700', 
+                        fontSize: '0.88rem',
+                        marginTop: '4px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)'
+                      }}
+                      onClick={() => {
+                        const newCart = {};
+                        o.items.forEach(i => newCart[i.id] = i.quantity);
+                        setCart(newCart);
+                        setTableNumber(cleanTable || o.tableNumber);
+                        setEditingOrderId(o.id);
+                        setCustomerMobile(o.customerMobile || "");
+                        setCustomerName(o.customerName || "");
+                        setOrderType(o.orderType || "Dine-in");
+                        setWaiterTab("Menu");
+                        setShowCart(true);
+                      }}
+                    >
+                      Edit / Add Items
+                    </button>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}
@@ -948,18 +1140,30 @@ const App = () => {
                     return (
                       <div key={id} className="cart-item">
                         <div className="item-main">
-                          <span className={`dot ${item.veg ? 'veg' : 'non-veg'}`} />
+                          <span className={item.veg ? "veg-symbol" : "nonveg-symbol"} />
                           <div className="item-name">{item.name}</div>
                         </div>
                         <div className="item-ctrl">
-                          <button onClick={() => {
+                          <button 
+                            type="button"
+                            onClick={() => {
                              const newCart = {...cart};
                              if (newCart[id] > 1) newCart[id]--;
                              else delete newCart[id];
                              setCart(newCart);
-                          }}><Minus size={14} /></button>
+                            }}
+                            title="Decrease quantity"
+                          >
+                            <Minus size={14} />
+                          </button>
                           <span>{qty}</span>
-                          <button onClick={() => setCart({...cart, [id]: (cart[id] || 0) + 1})}><Plus size={14} /></button>
+                          <button 
+                            type="button"
+                            onClick={() => setCart({...cart, [id]: (cart[id] || 0) + 1})}
+                            title="Increase quantity"
+                          >
+                            <Plus size={14} />
+                          </button>
                         </div>
                         <div className="item-price">₹{item.price * qty}</div>
                       </div>
@@ -1119,12 +1323,12 @@ const App = () => {
         .nav-item.active { color: var(--primary); }
         .nav-item span { font-size: 0.65rem; font-weight: 600; }
 
-        .modal-bg { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); z-index: 2000; }
-        .sheet { position: absolute; bottom: 0; width: 100%; background: white; border-radius: 24px 24px 0 0; padding: 20px; max-height: 90vh; display: flex; flex-direction: column; }
-        .sheet-bar { width: 40px; height: 4px; background: #DDD; border-radius: 2px; margin: 0 auto 15px; }
-        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .modal-bg { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; flex-direction: column; justify-content: flex-end; }
+        .sheet { position: relative; width: 100%; box-sizing: border-box; background: white; border-radius: 24px 24px 0 0; padding: 18px 18px 28px; max-height: 90vh; max-height: 90dvh; display: flex; flex-direction: column; }
+        .sheet-bar { width: 40px; height: 4px; background: #DDD; border-radius: 2px; margin: 0 auto 12px; flex-shrink: 0; }
+        .sheet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-shrink: 0; }
         .sheet-header button { background: #F5F5F5; border: none; padding: 6px; border-radius: 50%; }
-        .sheet-content { padding: 0 10px 20px; max-height: 75vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+        .sheet-content { padding: 4px 2px 24px; max-height: calc(90dvh - 90px); overflow-y: auto; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
 
         .order-type-tabs { display: flex; background: #F5F5F5; padding: 4px; border-radius: 12px; gap: 4px; }
         .order-type-tabs button { flex: 1; padding: 10px; border: none; border-radius: 10px; font-weight: 700; color: #555; background: transparent; cursor: pointer; }
@@ -1145,33 +1349,213 @@ const App = () => {
         .time-pills button { background: white; border: 1px solid #FDBA74; color: #9A3412; padding: 6px 12px; border-radius: 50px; font-weight: 700; font-size: 0.75rem; cursor: pointer; }
         .time-pills button.active { background: #EA580C; color: white; border-color: #EA580C; }
 
-        .sheet-table-box { background: #F9F9F9; padding: 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; border: 1px solid #EEE; }
-        .sheet-table-box input { border: none; background: transparent; font-size: 1rem; font-weight: 700; width: 100%; outline: none; }
+        .sheet-table-box {
+          background: #F8FAFC;
+          padding: 12px 16px;
+          border-radius: 14px;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          border: 1.5px solid #E2E8F0;
+          transition: border-color 0.15s, box-shadow 0.15s;
+          margin-bottom: 12px;
+        }
+        .sheet-table-box:focus-within {
+          border-color: #EA580C;
+          background: #FFFFFF;
+          box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+        }
+        .sheet-table-box input {
+          border: none;
+          background: transparent;
+          font-size: 0.95rem;
+          font-weight: 700;
+          color: #0F172A;
+          width: 100%;
+          outline: none;
+        }
 
-        .cart-items { display: flex; flex-direction: column; gap: 12px; }
-        .cart-item { display: flex; justify-content: space-between; align-items: center; }
-        .btn-add-more { width: 100%; padding: 10px; border-radius: 12px; border: 2px dashed #DDD; background: transparent; color: #666; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+        /* Cart Items & Stepper Styling */
+        .cart-items {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-bottom: 8px;
+        }
+        .cart-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 10px 14px;
+          background: #FFFFFF;
+          border: 1px solid #F1F5F9;
+          border-radius: 14px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+          gap: 12px;
+        }
+        .item-main {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex: 1;
+          min-width: 0;
+        }
+        .item-name {
+          font-weight: 700;
+          font-size: 0.95rem;
+          color: #0F172A;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
 
-        .coupon-box { background: #FFF9F5; border: 1px solid #FFE4D6; padding: 12px; border-radius: 12px; }
-        .coupon-box h4 { font-size: 0.8rem; color: #E8621A; margin-bottom: 6px; }
-        .coupon-input-group { display: flex; gap: 8px; }
-        .coupon-input-group input { flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #FFC4A8; font-weight: 700; text-transform: uppercase; }
-        .coupon-input-group button { background: #E8621A; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-        .applied-offer-pill { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 0.8rem; color: #15803D; background: #DCFCE7; padding: 6px 12px; border-radius: 6px; }
-        .applied-offer-pill button { background: none; border: none; color: #DC2626; cursor: pointer; font-size: 0.75rem; font-weight: bold; }
+        /* FSSAI Standard Veg & Non-Veg Badges */
+        .veg-symbol {
+          width: 15px;
+          height: 15px;
+          border: 1.5px solid #16A34A;
+          border-radius: 3px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #FFFFFF;
+          flex-shrink: 0;
+        }
+        .veg-symbol::after {
+          content: '';
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #16A34A;
+        }
+        .nonveg-symbol {
+          width: 15px;
+          height: 15px;
+          border: 1.5px solid #DC2626;
+          border-radius: 3px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #FFFFFF;
+          flex-shrink: 0;
+        }
+        .nonveg-symbol::after {
+          content: '';
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #DC2626;
+        }
 
-        .payment-method-selector { background: #F9FAFB; padding: 12px; border-radius: 12px; border: 1px solid #EEF0F2; }
-        .payment-method-selector h4 { font-size: 0.8rem; color: #444; margin-bottom: 8px; }
-        .p-tabs { display: flex; gap: 6px; }
-        .p-tabs button { flex: 1; padding: 8px; border: 1px solid #DDD; border-radius: 8px; background: white; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
-        .p-tabs button.active { background: #1A1208; color: white; border-color: #1A1208; }
+        /* Custom Modern Stepper Button (- 1 +) */
+        .item-ctrl {
+          display: flex;
+          align-items: center;
+          background: #FFF7ED;
+          border: 1.5px solid #FDBA74;
+          border-radius: 10px;
+          padding: 2px 4px;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+        .item-ctrl button {
+          background: transparent;
+          border: none;
+          color: #EA580C;
+          width: 26px;
+          height: 26px;
+          border-radius: 6px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 0.15s, transform 0.1s;
+          padding: 0;
+        }
+        .item-ctrl button:hover {
+          background: #FED7AA;
+        }
+        .item-ctrl button:active {
+          transform: scale(0.9);
+        }
+        .item-ctrl span {
+          font-size: 0.9rem;
+          font-weight: 800;
+          color: #9A3412;
+          min-width: 16px;
+          text-align: center;
+        }
 
-        .sheet textarea { width: 100%; background: #F9F9F9; border: 1px solid #EEE; padding: 10px; border-radius: 12px; height: 60px; font-family: inherit; }
-        .total-summary { background: #F9F9F9; padding: 14px; border-radius: 16px; }
+        .item-price {
+          font-size: 0.95rem;
+          font-weight: 800;
+          color: #EA580C;
+          min-width: 50px;
+          text-align: right;
+          flex-shrink: 0;
+        }
+
+        .btn-add-more {
+          width: 100%;
+          padding: 12px;
+          border-radius: 12px;
+          border: 1.5px dashed #FDBA74;
+          background: #FFFDF9;
+          color: #EA580C;
+          font-weight: 700;
+          font-size: 0.88rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          cursor: pointer;
+          transition: all 0.15s;
+          margin: 6px 0 10px;
+        }
+        .btn-add-more:hover {
+          background: #FFF7ED;
+          border-color: #EA580C;
+        }
+
+        .sheet textarea {
+          width: 100%;
+          box-sizing: border-box;
+          background: #F8FAFC;
+          border: 1.5px solid #E2E8F0;
+          padding: 12px 14px;
+          border-radius: 14px;
+          min-height: 72px;
+          font-family: inherit;
+          font-size: 0.88rem;
+          color: #0F172A;
+          outline: none;
+          resize: vertical;
+          line-height: 1.4;
+          transition: border-color 0.15s, background 0.15s;
+          flex-shrink: 0;
+          margin-bottom: 4px;
+        }
+        .sheet textarea:focus {
+          border-color: #EA580C;
+          background: #FFFFFF;
+        }
+        .total-summary { background: #F9F9F9; padding: 14px; border-radius: 16px; flex-shrink: 0; }
         .row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.85rem; color: #666; }
         .green-row { color: #16A34A; font-weight: 700; }
         .grand { border-top: 1px dashed #DDD; padding-top: 8px; margin-top: 6px; font-weight: 800; color: #000; font-size: 1.1rem; }
-        .btn-order { width: 100%; background: var(--primary); color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+        .btn-order { 
+          width: 100%; 
+          background: var(--primary); 
+          color: white; 
+          border: none; 
+          padding: 16px; 
+          border-radius: 16px; 
+          font-weight: 700; 
+          font-size: 1.1rem; 
+          cursor: pointer; 
+          flex-shrink: 0;
+          margin-top: 4px;
+        }
 
         .success-overlay { position: fixed; top: 0; bottom: 0; left: 0; right: 0; background: white; z-index: 3000; display: flex; align-items: center; justify-content: center; }
         .success-modal { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
@@ -1296,7 +1680,36 @@ const AdminDashboard = ({
   const pendingRequestsCount = tableRequests.filter(r => r.status !== 'Resolved').length;
 
   const updateStatus = (id, status) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+    const isBilledStatus = status === 'Billed' || status === 'Paid' || status === 'Closed';
+    const nowIso = new Date().toISOString();
+    setOrders(prev => prev.map(o => o.id === id ? { 
+      ...o, 
+      status,
+      ...(isBilledStatus ? { 
+        takeawayStatus: 'Billed', 
+        isBilled: true, 
+        isClosed: true, 
+        paymentStatus: 'Paid', 
+        billedAt: nowIso 
+      } : {})
+    } : o));
+
+    try {
+      fetch(`/api/orders/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status, 
+          ...(isBilledStatus ? { 
+            paymentStatus: 'Paid', 
+            isBilled: true, 
+            isClosed: true, 
+            takeawayStatus: 'Billed',
+            billedAt: nowIso
+          } : {})
+        })
+      }).catch(() => {});
+    } catch (e) {}
   };
 
   const updateTakeawayStatus = (id, takeawayStatus) => {
@@ -1409,13 +1822,28 @@ const AdminDashboard = ({
                 {o.discountAmount > 0 && <div className="discount-tag-row">🏷️ Discount ({o.discountCode}): -₹{o.discountAmount}</div>}
 
                 <div className="card-btns">
-                  {o.status === 'Pending' && <button className="btn-c" onClick={() => updateStatus(o.id, 'Confirmed')}>Confirm</button>}
-                  {o.status === 'Confirmed' && <button className="btn-r" onClick={() => updateStatus(o.id, 'Ready')}>Ready</button>}
+                  {o.status === 'Billed' ? (
+                    <button 
+                      className="btn-billed-done" 
+                      style={{ background: '#DCFCE7', color: '#16A34A', border: '1px solid #86EFAC', borderRadius: 10, padding: '7px 12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}
+                      onClick={() => alert(`Order #${o.id} is already Billed and stored in the Billing page!`)}
+                    >
+                      <CheckCircle2 size={13} /> Billed
+                    </button>
+                  ) : (
+                    <button 
+                      className="btn-bill" 
+                      style={{ background: '#EA580C', color: 'white', border: 'none', borderRadius: 10, padding: '7px 12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}
+                      onClick={() => {
+                        updateStatus(o.id, 'Billed');
+                        alert(`✅ Order #${o.id} Billed & Saved to Billing Page!`);
+                      }}
+                    >
+                      <Receipt size={13} /> Bill
+                    </button>
+                  )}
                   <button className="btn-wa-bill" onClick={() => sendWhatsAppBill(o)}>
                     <Send size={13} /> WA Bill
-                  </button>
-                  <button className="btn-p" onClick={() => handlePrint(o)}>
-                    <Printer size={13} /> Print
                   </button>
                 </div>
               </div>
@@ -1663,7 +2091,7 @@ const MenuMgmt = ({ menu, setMenu }) => {
   const [editForm, setEditForm] = useState({ id: "", name: "", price: "", category: "", veg: true, no: "" });
   const [newItemForm, setNewItemForm] = useState({ name: "", price: "", category: "Roti Varieties", veg: true, no: "" });
 
-  const categories = ["Roti Varieties", "Chicken Gravy", "Egg Varieties", "Gravy", "Veg Varieties", "Veg Rice Varieties", "Non-Veg Rice & Noodles", "Noodles"];
+  const categories = ["Roti Varieties", "Chicken Gravy", "Egg Varieties", "Gravy", "Veg Varieties", "Veg Rice Varieties", "Non-Veg Rice Varieties", "Noodles", "Chicken 65 Varieties", "Other Non-Veg Varieties", "Veg 65 Varieties"];
 
   const handleAddNew = (e) => {
     e.preventDefault();

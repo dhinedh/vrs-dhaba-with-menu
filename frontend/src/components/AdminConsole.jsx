@@ -37,7 +37,9 @@ import {
   RotateCcw,
   Sparkles,
   Lock,
-  Percent
+  Percent,
+  Menu as MenuIcon,
+  ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -69,7 +71,9 @@ export const AdminConsole = ({
   tableRequests = [],
   setTableRequests,
   onLogout,
-  onSelectTableForOrder
+  onSelectTableForOrder,
+  onSwitchRole,
+  adminTargetTab
 }) => {
   // 5 MAIN DOWNBAR TABS:
   // 'home'    => 01. Dashboard, 14. Notifications, 16. Account
@@ -82,6 +86,22 @@ export const AdminConsole = ({
   // Sub-navigation state per Downbar Category
   const [orderSubTab, setOrderSubTab] = useState('all-orders'); // 'all-orders', 'delivery', 'takeaway', 'tables', 'qr', 'assistance'
   const [orderStageFilter, setOrderStageFilter] = useState('ALL'); // 'ALL', 'Pending', 'Confirmed', 'Kitchen', 'Ready', 'Served', 'Billed', 'Cancelled'
+  const [justSentAlert, setJustSentAlert] = useState(null);
+
+  useEffect(() => {
+    if (adminTargetTab && adminTargetTab.tab) {
+      setActiveDownTab(adminTargetTab.tab);
+      if (adminTargetTab.subTab) {
+        setOrderSubTab(adminTargetTab.subTab);
+      }
+      setOrderStageFilter('ALL');
+      if (adminTargetTab.newOrderId) {
+        setJustSentAlert(`🚀 Order #${adminTargetTab.newOrderId} received and sent to Admin Orders page!`);
+        const timer = setTimeout(() => setJustSentAlert(null), 6000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [adminTargetTab]);
   const [billingSubTab, setBillingSubTab] = useState('bills'); // 'bills', 'create-bill', 'payments'
   const [reportSubTab, setReportSubTab] = useState('reports'); // 'reports', 'expenses', 'daily-closing'
   const [menuSubTab, setMenuSubTab] = useState('menu-items'); // 'menu-items', 'inventory', 'purchase', 'staff', 'crm', 'settings'
@@ -89,6 +109,11 @@ export const AdminConsole = ({
   // Search queries
   const [orderSearch, setOrderSearch] = useState('');
   const [menuSearch, setMenuSearch] = useState('');
+
+  // 🧭 Slide-in 16-Module ERP Sidebar State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [sidebarSearch, setSidebarSearch] = useState('');
+  const [expandedSidebarModule, setExpandedSidebarModule] = useState(null);
 
   // Thermal Printing
   const [printingOrder, setPrintingOrder] = useState(null);
@@ -134,18 +159,22 @@ export const AdminConsole = ({
     ];
   });
 
-  // Staff Management state (09. Staff)
+  // Staff Management state (09. Staff & Salary)
+  const [staffSubTab, setStaffSubTab] = useState('members'); // 'members', 'salary'
   const [staffList, setStaffList] = useState(() => {
     const saved = localStorage.getItem('vrs_staff');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try { 
+        const parsed = JSON.parse(saved);
+        if (parsed.length > 0 && parsed[0].salary !== undefined) return parsed;
+      } catch (e) {}
     }
     return [
-      { id: 'STF-1', name: 'Murali K.', role: 'Admin', phone: '9845213456', shift: 'Full Day', tables: 'All Tables', status: 'Active' },
-      { id: 'STF-2', name: 'Ravi Kumar', role: 'Head Chef', phone: '9443210987', shift: 'Morning & Evening', tables: 'Tandoor & Gravy', status: 'Active' },
-      { id: 'STF-3', name: 'Suresh S.', role: 'Senior Waiter', phone: '9786123450', shift: 'Lunch & Dinner', tables: 'T-1 to T-6', status: 'Active' },
-      { id: 'STF-4', name: 'Manikandan P.', role: 'Waiter', phone: '9600123984', shift: 'Dinner Shift', tables: 'T-7 to T-14', status: 'Active' },
-      { id: 'STF-5', name: 'Dinesh V.', role: 'Delivery Partner', phone: '9894123001', shift: 'On Call', tables: 'Online Deliveries', status: 'Active' }
+      { id: 'STF-1', name: 'Murali K.', role: 'Admin', phone: '9845213456', shift: 'Full Day', tables: 'All Tables', status: 'Active', salary: 35000, salaryStatus: 'Paid', advancePaid: 0, salaryPaidDate: '2026-11-01' },
+      { id: 'STF-2', name: 'Ravi Kumar', role: 'Head Chef', phone: '9443210987', shift: 'Morning & Evening', tables: 'Tandoor & Gravy', status: 'Active', salary: 28000, salaryStatus: 'Paid', advancePaid: 1000, salaryPaidDate: '2026-11-01' },
+      { id: 'STF-3', name: 'Suresh S.', role: 'Senior Waiter', phone: '9786123450', shift: 'Lunch & Dinner', tables: 'T-1 to T-6', status: 'Active', salary: 16000, salaryStatus: 'Pending', advancePaid: 1500, salaryPaidDate: '' },
+      { id: 'STF-4', name: 'Manikandan P.', role: 'Waiter', phone: '9600123984', shift: 'Dinner Shift', tables: 'T-7 to T-14', status: 'Active', salary: 14000, salaryStatus: 'Pending', advancePaid: 500, salaryPaidDate: '' },
+      { id: 'STF-5', name: 'Dinesh V.', role: 'Delivery Partner', phone: '9894123001', shift: 'On Call', tables: 'Online Deliveries', status: 'Active', salary: 15000, salaryStatus: 'Paid', advancePaid: 0, salaryPaidDate: '2026-11-02' }
     ];
   });
 
@@ -170,7 +199,36 @@ export const AdminConsole = ({
 
   // Order status actions
   const updateStatus = (id, status) => {
-    setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+    const isBilledStatus = status === 'Billed' || status === 'Paid' || status === 'Closed';
+    const nowIso = new Date().toISOString();
+    setOrders(prev => prev.map(o => o.id === id ? { 
+      ...o, 
+      status,
+      ...(isBilledStatus ? { 
+        takeawayStatus: 'Billed', 
+        isBilled: true, 
+        isClosed: true, 
+        paymentStatus: 'Paid', 
+        billedAt: nowIso 
+      } : {})
+    } : o));
+
+    try {
+      fetch(`/api/orders/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status, 
+          ...(isBilledStatus ? { 
+            paymentStatus: 'Paid', 
+            isBilled: true, 
+            isClosed: true, 
+            takeawayStatus: 'Billed',
+            billedAt: nowIso
+          } : {})
+        })
+      }).catch(() => {});
+    } catch (e) {}
   };
 
   const updateTakeawayStatus = (id, takeawayStatus) => {
@@ -202,6 +260,39 @@ export const AdminConsole = ({
     }, 500);
   };
 
+  // Bill order handler (Stores in Billing Page)
+  const handleBillOrder = (order) => {
+    const nowIso = new Date().toISOString();
+    const updatedOrder = {
+      ...order,
+      status: 'Billed',
+      takeawayStatus: 'Billed',
+      isBilled: true,
+      isClosed: true,
+      paymentStatus: 'Paid',
+      billedAt: nowIso
+    };
+
+    setOrders(prev => prev.map(o => o.id === order.id ? updatedOrder : o));
+
+    try {
+      fetch(`/api/orders/${order.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status: 'Billed', 
+          paymentStatus: 'Paid',
+          isBilled: true,
+          isClosed: true,
+          takeawayStatus: 'Billed',
+          billedAt: nowIso
+        })
+      }).catch(() => {});
+    } catch (e) {}
+
+    alert(`✅ Order #${order.id} Billed Successfully!\nAmount: ₹${order.netTotal || order.total}\nIt is now saved in the Billing Page.`);
+  };
+
   // WhatsApp Bill Dispatch
   const sendWhatsAppBill = (order) => {
     const mob = order.customerMobile || "9876543210";
@@ -213,6 +304,34 @@ export const AdminConsole = ({
 
     const url = `https://wa.me/${formattedMob}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
+  };
+
+  // Pay Staff Salary handler
+  const handlePaySalary = (stf) => {
+    const netAmount = (stf.salary || 15000) - (stf.advancePaid || 0);
+    const nowIso = new Date().toISOString();
+
+    setStaffList(prev => prev.map(s => s.id === stf.id ? { 
+      ...s, 
+      salaryStatus: 'Paid', 
+      salaryPaidDate: nowIso 
+    } : s));
+
+    if (setExpenses) {
+      const newExp = {
+        id: `EXP-${Date.now()}`,
+        title: `Staff Salary - ${stf.name} (${stf.role})`,
+        amount: netAmount,
+        category: 'Staff Salary',
+        paidTo: stf.name,
+        paymentMode: 'Cash',
+        date: new Date().toISOString().split('T')[0],
+        timestamp: nowIso
+      };
+      setExpenses(prev => [newExp, ...prev]);
+    }
+
+    alert(`✅ Salary Payment Success!\nPaid ₹${netAmount.toLocaleString('en-IN')} to ${stf.name} (${stf.role}).\nRecorded under Staff Payroll and 11. Expense Management.`);
   };
 
   // Filtered orders list by search & stage
@@ -324,13 +443,459 @@ export const AdminConsole = ({
     handlePrint(newBillOrder);
   };
 
+  // 🧭 All 16 ERP Modules with sub-navigation routes
+  const erpModules = useMemo(() => [
+    {
+      id: '01',
+      name: '01. Dashboard',
+      icon: HomeIcon,
+      isActive: activeDownTab === 'home',
+      subItems: ['Overview', 'Sales Summary', 'Recent Activities'],
+      action: () => {
+        setActiveDownTab('home');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '02',
+      name: '02. Order Management',
+      icon: ShoppingBag,
+      badge: activeOrdersCount > 0 ? activeOrdersCount : null,
+      badgeType: 'primary',
+      isActive: activeDownTab === 'order' && (orderSubTab === 'all-orders' || orderSubTab === 'delivery' || orderSubTab === 'takeaway'),
+      subItems: ['All Orders', 'New Orders', 'Confirmed Orders', 'Preparing Orders', 'Ready Orders', 'Served Orders', 'Cancelled Orders', 'Order History'],
+      action: (sub) => {
+        setActiveDownTab('order');
+        setOrderSubTab('all-orders');
+        if (sub === 'Order History' || sub === 'Served Orders') setOrderStageFilter('Served');
+        else if (sub === 'New Orders') setOrderStageFilter('Pending');
+        else if (sub === 'Preparing Orders') setOrderStageFilter('Kitchen');
+        else if (sub === 'Ready Orders') setOrderStageFilter('Ready');
+        else if (sub === 'Cancelled Orders') setOrderStageFilter('Cancelled');
+        else setOrderStageFilter('ALL');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '03',
+      name: '03. Table Management',
+      icon: TableIcon,
+      isActive: activeDownTab === 'order' && orderSubTab === 'tables',
+      subItems: ['All Tables', 'Available Tables', 'Occupied Tables', 'Reserved Tables', 'Table Layout', 'Table Transfer'],
+      action: () => {
+        setActiveDownTab('order');
+        setOrderSubTab('tables');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '04',
+      name: '04. Billing Management',
+      icon: Receipt,
+      isActive: activeDownTab === 'billing' && (billingSubTab === 'bills' || billingSubTab === 'create-bill'),
+      subItems: ['Create New Bill', 'Pending Bills', 'Paid Bills', 'Invoice History', 'Cancelled Bills', 'Refund Management'],
+      action: (sub) => {
+        setActiveDownTab('billing');
+        if (sub === 'Create New Bill') setBillingSubTab('create-bill');
+        else setBillingSubTab('bills');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '05',
+      name: '05. Payment Management',
+      icon: DollarSign,
+      isActive: activeDownTab === 'billing' && billingSubTab === 'payments',
+      subItems: ['All Payments', 'Cash Payments', 'UPI Payments', 'Card Payments', 'Split Payments', 'Payment History'],
+      action: () => {
+        setActiveDownTab('billing');
+        setBillingSubTab('payments');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '06',
+      name: '06. Menu Management',
+      icon: UtensilsCrossed,
+      badge: menu.length,
+      badgeType: 'primary',
+      isActive: activeDownTab === 'menu' && menuSubTab === 'menu-items',
+      subItems: ['All Menu Items', 'Add New Item', 'Categories', 'Item Variants', 'Item Availability', 'Pricing Management'],
+      action: () => {
+        setActiveDownTab('menu');
+        setMenuSubTab('menu-items');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '07',
+      name: '07. Inventory Management',
+      icon: Boxes,
+      badge: lowStockCount > 0 ? `${lowStockCount} Low` : null,
+      badgeType: 'warning',
+      isActive: activeDownTab === 'menu' && menuSubTab === 'inventory',
+      subItems: ['Stock Overview', 'Stock In', 'Stock Out', 'Low Stock', 'Stock Adjustment', 'Stock History'],
+      action: () => {
+        setActiveDownTab('menu');
+        setMenuSubTab('inventory');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '08',
+      name: '08. Purchase Management',
+      icon: Truck,
+      isActive: activeDownTab === 'menu' && menuSubTab === 'purchase',
+      subItems: ['Purchase Orders', 'New Purchase', 'Purchase History', 'Suppliers', 'Purchase Returns'],
+      action: () => {
+        setActiveDownTab('menu');
+        setMenuSubTab('purchase');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '09',
+      name: '09. Staff Management & Salary',
+      icon: Users,
+      badge: staffList.length,
+      badgeType: 'primary',
+      isActive: activeDownTab === 'menu' && menuSubTab === 'staff',
+      subItems: ['All Staff', 'Staff Salary & Payroll', 'Pay Salary', 'Staff Attendance', 'Shift Management', 'Waiter Table Assignment'],
+      action: (sub) => {
+        setActiveDownTab('menu');
+        setMenuSubTab('staff');
+        if (sub === 'Staff Salary & Payroll' || sub === 'Pay Salary') {
+          setStaffSubTab('salary');
+        } else {
+          setStaffSubTab('members');
+        }
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '10',
+      name: '10. Reports & Analytics',
+      icon: BarChart3,
+      isActive: activeDownTab === 'report' && reportSubTab === 'reports',
+      subItems: ['Daily Sales Report', 'Weekly Sales Report', 'Monthly Sales Report', 'Item-wise Sales', 'Category-wise Sales', 'Waiter-wise Sales', 'Payment Reports', 'GST Reports'],
+      action: () => {
+        setActiveDownTab('report');
+        setReportSubTab('reports');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '11',
+      name: '11. Expense Management',
+      icon: TrendingUp,
+      isActive: activeDownTab === 'report' && reportSubTab === 'expenses',
+      subItems: ['All Expenses', 'Add Expense', 'Expense Categories', 'Expense History'],
+      action: () => {
+        setActiveDownTab('report');
+        setReportSubTab('expenses');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '12',
+      name: '12. Daily Closing',
+      icon: Lock,
+      isActive: activeDownTab === 'report' && reportSubTab === 'daily-closing',
+      subItems: ['Opening Cash', 'Cash Collection', 'UPI Collection', 'Card Collection', 'Expenses Summary', 'Closing Balance', 'Closing Report'],
+      action: () => {
+        setActiveDownTab('report');
+        setReportSubTab('daily-closing');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '13',
+      name: '13. Customer Management',
+      icon: MessageSquare,
+      badge: customers.length,
+      badgeType: 'primary',
+      isActive: activeDownTab === 'menu' && menuSubTab === 'crm',
+      subItems: ['All Customers', 'Customer History', 'Customer Details', 'Customer Feedback'],
+      action: () => {
+        setActiveDownTab('menu');
+        setMenuSubTab('crm');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '14',
+      name: '14. Notifications',
+      icon: Bell,
+      badge: (pendingRequestsCount + activeDeliveryCount) > 0 ? (pendingRequestsCount + activeDeliveryCount) : null,
+      badgeType: 'warning',
+      isActive: false,
+      subItems: ['New Order Alerts', 'Payment Alerts', 'Stock Alerts', 'System Notifications'],
+      action: () => {
+        setActiveDownTab('home');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '15',
+      name: '15. Settings',
+      icon: Settings,
+      isActive: activeDownTab === 'menu' && menuSubTab === 'settings',
+      subItems: ['Hotel Profile', 'GST & Tax Settings', 'Invoice Settings', 'Printer Settings', 'Payment Settings', 'User Roles & Permissions', 'Backup & Restore', 'General Settings'],
+      action: () => {
+        setActiveDownTab('menu');
+        setMenuSubTab('settings');
+        setIsSidebarOpen(false);
+      }
+    },
+    {
+      id: '16',
+      name: '16. Account',
+      icon: UserCheck,
+      isActive: false,
+      subItems: ['My Profile', 'Change Password', 'Logout'],
+      action: (sub) => {
+        if (sub === 'Logout' && onLogout) {
+          onLogout();
+        } else {
+          setActiveDownTab('menu');
+          setMenuSubTab('settings');
+        }
+        setIsSidebarOpen(false);
+      }
+    }
+  ], [
+    activeDownTab, orderSubTab, billingSubTab, reportSubTab, menuSubTab, 
+    activeOrdersCount, lowStockCount, staffList.length, customers.length, 
+    pendingRequestsCount, activeDeliveryCount, menu.length, onLogout
+  ]);
+
+  const filteredModules = useMemo(() => {
+    if (!sidebarSearch.trim()) return erpModules;
+    const q = sidebarSearch.toLowerCase();
+    return erpModules.filter(m => 
+      m.name.toLowerCase().includes(q) || 
+      m.subItems?.some(s => s.toLowerCase().includes(q))
+    );
+  }, [erpModules, sidebarSearch]);
+
   return (
     <div className="admin-console-layout">
+      {/* ========================================================= */}
+      {/* 🧭 SLIDE-IN ERP MODULES SIDEBAR DRAWER (16 MODULES) */}
+      {/* ========================================================= */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            className="admin-sidebar-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <motion.aside 
+              className="admin-sidebar-drawer"
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 26, stiffness: 260 }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Sidebar Header */}
+              <div className="asd-header">
+                <div className="asd-brand-info">
+                  <div className="asd-logo-bubble">
+                    <UtensilsCrossed size={22} color="#FFFFFF" />
+                  </div>
+                  <div>
+                    <h3 className="asd-title">{settings.name || "VRS Garden Dhaba"}</h3>
+                    <span className="asd-badge">ERP Modules (16)</span>
+                  </div>
+                </div>
+
+                <button 
+                  className="asd-close-btn"
+                  onClick={() => setIsSidebarOpen(false)}
+                  title="Close Sidebar"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Search Box inside Sidebar */}
+              <div className="asd-search-box">
+                <Search size={16} color="#94A3B8" />
+                <input 
+                  type="text" 
+                  placeholder="Search 16 modules & pages..."
+                  value={sidebarSearch}
+                  onChange={e => setSidebarSearch(e.target.value)}
+                />
+                {sidebarSearch && (
+                  <button className="asd-clear-search" onClick={() => setSidebarSearch('')}>
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Quick Jump Shortcuts inside Sidebar */}
+              <div className="asd-quick-shortcuts">
+                <button 
+                  className="asd-qs-btn salary"
+                  onClick={() => {
+                    setActiveDownTab('menu');
+                    setMenuSubTab('staff');
+                    setStaffSubTab('salary');
+                    setIsSidebarOpen(false);
+                  }}
+                  title="View Staff Salary & Payroll"
+                >
+                  <DollarSign size={13} />
+                  <span>Staff Salary</span>
+                </button>
+                <button 
+                  className="asd-qs-btn"
+                  onClick={() => {
+                    setActiveDownTab('order');
+                    setOrderSubTab('all-orders');
+                    setIsSidebarOpen(false);
+                  }}
+                  title="Live Orders"
+                >
+                  <ShoppingBag size={13} />
+                  <span>Orders</span>
+                </button>
+                <button 
+                  className="asd-qs-btn"
+                  onClick={() => {
+                    setActiveDownTab('billing');
+                    setBillingSubTab('bills');
+                    setIsSidebarOpen(false);
+                  }}
+                  title="Bills & Settlement"
+                >
+                  <Receipt size={13} />
+                  <span>Bills</span>
+                </button>
+                <button 
+                  className="asd-qs-btn"
+                  onClick={() => {
+                    setActiveDownTab('menu');
+                    setMenuSubTab('menu-items');
+                    setIsSidebarOpen(false);
+                  }}
+                  title="Dishes Menu"
+                >
+                  <UtensilsCrossed size={13} />
+                  <span>Menu</span>
+                </button>
+              </div>
+
+              {/* Modules List */}
+              <div className="asd-modules-list">
+                {filteredModules.map(mod => {
+                  const Icon = mod.icon;
+                  const isExpanded = expandedSidebarModule === mod.id;
+                  return (
+                    <div key={mod.id} className="asd-module-group">
+                      <div 
+                        className={`asd-module-row ${mod.isActive ? 'active' : ''}`}
+                        onClick={() => {
+                          if (mod.subItems && mod.subItems.length > 0 && !sidebarSearch) {
+                            setExpandedSidebarModule(prev => prev === mod.id ? null : mod.id);
+                          }
+                          mod.action();
+                        }}
+                      >
+                        <div className="asd-mr-left">
+                          <div className="asd-module-icon-wrap">
+                            <Icon size={18} />
+                          </div>
+                          <div>
+                            <strong className="asd-module-name">{mod.name}</strong>
+                            <small className="asd-module-subtext">
+                              {mod.subItems?.[0]} • {mod.subItems?.[1]}
+                            </small>
+                          </div>
+                        </div>
+
+                        <div className="asd-mr-right">
+                          {mod.badge && (
+                            <span className={`asd-pill-badge ${mod.badgeType || 'primary'}`}>
+                              {mod.badge}
+                            </span>
+                          )}
+                          <button 
+                            className="asd-expand-toggle-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedSidebarModule(prev => prev === mod.id ? null : mod.id);
+                            }}
+                          >
+                            <ChevronRight 
+                              size={15} 
+                              className={`asd-chevron ${isExpanded || sidebarSearch ? 'rotated' : ''}`} 
+                            />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Sub-items dropdown */}
+                      <AnimatePresence>
+                        {(isExpanded || (sidebarSearch && mod.subItems?.some(s => s.toLowerCase().includes(sidebarSearch.toLowerCase())))) && (
+                          <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="asd-subitems-tray"
+                          >
+                            {mod.subItems?.map((sub, sIdx) => (
+                              <button 
+                                key={sIdx}
+                                className="asd-subitem-link"
+                                onClick={() => mod.action(sub)}
+                              >
+                                <span className="asd-sub-bullet">•</span>
+                                <span>{sub}</span>
+                              </button>
+                            ))}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Sidebar Footer */}
+              <div className="asd-footer">
+                <div className="asd-user-badge">
+                  <div className="asd-user-dot" />
+                  <span>Admin Session Active</span>
+                </div>
+                <button className="asd-footer-logout" onClick={() => { setIsSidebarOpen(false); if (onLogout) onLogout(); }}>
+                  <LogOut size={15} />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </motion.aside>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* ========================================================= */}
       {/* 🔝 TOP HEADER BAR */}
       {/* ========================================================= */}
       <header className="admin-top-bar">
         <div className="atb-left">
+          <button 
+            className="atb-sidebar-toggle-btn"
+            onClick={() => setIsSidebarOpen(true)}
+            title="Open ERP Navigation Sidebar"
+            aria-label="Open ERP Navigation Sidebar"
+          >
+            <MenuIcon size={20} />
+          </button>
           <div className="dhaba-logo-icon">
             <UtensilsCrossed size={20} color="#EA580C" />
           </div>
@@ -363,6 +928,31 @@ export const AdminConsole = ({
               title="Print Last Order Receipt"
             >
               <Printer size={18} />
+            </button>
+          )}
+
+          {/* Quick Switch to Waiter Mode */}
+          {onSwitchRole && (
+            <button 
+              className="atb-icon-action-btn waiter-switch"
+              onClick={() => onSwitchRole('waiter')}
+              title="Switch to Waiter Portal"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 14px',
+                borderRadius: '50px',
+                background: '#FFF7ED',
+                border: '1px solid #FFEDD5',
+                color: '#EA580C',
+                fontWeight: '700',
+                fontSize: '0.8rem',
+                cursor: 'pointer'
+              }}
+            >
+              <UtensilsCrossed size={14} />
+              <span>Waiter Mode</span>
             </button>
           )}
 
@@ -653,6 +1243,33 @@ export const AdminConsole = ({
             {/* Sub-view: All Orders Pipeline */}
             {orderSubTab === 'all-orders' && (
               <div className="orders-pipeline-subview">
+                {justSentAlert && (
+                  <div style={{
+                    background: '#ECFDF5',
+                    color: '#065F46',
+                    border: '1.5px solid #6EE7B7',
+                    padding: '12px 18px',
+                    borderRadius: '14px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    fontWeight: '700',
+                    fontSize: '0.92rem',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.15)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <CheckCircle2 size={18} color="#059669" />
+                      <span>{justSentAlert}</span>
+                    </div>
+                    <button 
+                      onClick={() => setJustSentAlert(null)}
+                      style={{ background: 'transparent', border: 'none', color: '#065F46', fontWeight: '800', cursor: 'pointer', fontSize: '1.1rem' }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
                 {/* Search & Stage Filters */}
                 <div className="order-pipeline-filter-bar">
                   <div className="opfb-search-box">
@@ -731,33 +1348,33 @@ export const AdminConsole = ({
                         )}
 
                         <div className="oct-actions-bar">
-                          {o.status === 'Pending' && (
-                            <button className="btn-stg btn-confirm" onClick={() => updateStatus(o.id, 'Confirmed')}>
-                              Confirm
+                          {o.status === 'Billed' ? (
+                            <button 
+                              className="btn-stg btn-bill-done" 
+                              onClick={() => {
+                                setActiveDownTab('billing');
+                                setBillingSubTab('bills');
+                              }}
+                              title="Billed & Saved in Billing Page (Click to View)"
+                            >
+                              <CheckCircle2 size={13} /> Billed
                             </button>
-                          )}
-                          {o.status === 'Confirmed' && (
-                            <button className="btn-stg btn-kitchen" onClick={() => updateStatus(o.id, 'Kitchen')}>
-                              Send to Kitchen
-                            </button>
-                          )}
-                          {(o.status === 'Kitchen' || o.status === 'Preparing') && (
-                            <button className="btn-stg btn-ready" onClick={() => updateStatus(o.id, 'Ready')}>
-                              Mark Ready
-                            </button>
-                          )}
-                          {o.status === 'Ready' && (
-                            <button className="btn-stg btn-served" onClick={() => updateStatus(o.id, 'Served')}>
-                              Mark Served
+                          ) : (
+                            <button 
+                              className="btn-stg btn-bill-action" 
+                              onClick={() => handleBillOrder(o)}
+                              title="Bill this order and store in Billing Page"
+                            >
+                              <Receipt size={13} /> Bill
                             </button>
                           )}
 
-                          <button className="btn-stg btn-wa" onClick={() => sendWhatsAppBill(o)}>
+                          <button 
+                            className="btn-stg btn-wa" 
+                            onClick={() => sendWhatsAppBill(o)}
+                            title="Send WhatsApp Bill"
+                          >
                             <Send size={13} /> WA Bill
-                          </button>
-
-                          <button className="btn-stg btn-print" onClick={() => handlePrint(o)}>
-                            <Printer size={13} /> Print KOT
                           </button>
                         </div>
                       </div>
@@ -1554,52 +2171,203 @@ export const AdminConsole = ({
               </div>
             )}
 
-            {/* Sub-view: 09. Staff Management */}
+            {/* Sub-view: 09. Staff Management & Salary */}
             {menuSubTab === 'staff' && (
               <div className="staff-mgmt-subview">
-                <div className="inv-top-bar">
-                  <div>
-                    <h3>Staff Members, Waiters & Roster</h3>
-                    <p>Manage staff attendance, shifts and table assignments</p>
-                  </div>
+                {/* Staff Sub-view Mode Switcher */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid #E2E8F0', paddingBottom: '12px' }}>
                   <button 
-                    className="btn-add-inv-item"
-                    onClick={() => {
-                      const name = prompt("Enter Staff Name:");
-                      if (!name) return;
-                      const role = prompt("Role (Waiter / Chef / Cashier):") || "Waiter";
-                      const phone = prompt("Mobile Number:") || "9876543210";
-                      setStaffList([
-                        ...staffList,
-                        { id: `STF-${staffList.length + 1}`, name, role, phone, shift: 'Full Shift', tables: 'Assigned', status: 'Active' }
-                      ]);
-                    }}
+                    className={`smn-pill ${staffSubTab === 'members' ? 'active' : ''}`}
+                    onClick={() => setStaffSubTab('members')}
                   >
-                    <Plus size={16} /> Add Staff Member
+                    <Users size={14} /> Staff Members ({staffList.length})
+                  </button>
+                  <button 
+                    className={`smn-pill ${staffSubTab === 'salary' ? 'active' : ''}`}
+                    onClick={() => setStaffSubTab('salary')}
+                    style={staffSubTab === 'salary' ? { background: '#16A34A', color: 'white', borderColor: '#16A34A' } : {}}
+                  >
+                    <DollarSign size={14} /> Staff Salary & Payroll ({staffList.filter(s => s.salaryStatus !== 'Paid').length} Pending)
                   </button>
                 </div>
 
-                <div className="staff-cards-grid">
-                  {staffList.map(stf => (
-                    <div key={stf.id} className="staff-member-card">
-                      <div className="smc-header">
-                        <div className="smc-avatar">
-                          <UserCheck size={20} color="#EA580C" />
-                        </div>
-                        <div>
-                          <h4>{stf.name}</h4>
-                          <span className="smc-role-tag">{stf.role}</span>
-                        </div>
+                {staffSubTab === 'members' ? (
+                  <>
+                    <div className="inv-top-bar">
+                      <div>
+                        <h3>Staff Members, Waiters & Roster</h3>
+                        <p>Manage staff attendance, shifts and table assignments</p>
                       </div>
-                      <div className="smc-body">
-                        <p>📱 {stf.phone}</p>
-                        <p>🕒 Shift: {stf.shift}</p>
-                        <p>📍 Coverage: {stf.tables}</p>
-                        <span className="smc-status active">● {stf.status}</span>
+                      <button 
+                        className="btn-add-inv-item"
+                        onClick={() => {
+                          const name = prompt("Enter Staff Name:");
+                          if (!name) return;
+                          const role = prompt("Role (Waiter / Chef / Cashier):") || "Waiter";
+                          const phone = prompt("Mobile Number:") || "9876543210";
+                          const sal = Number(prompt("Monthly Salary (₹):") || 15000);
+                          setStaffList([
+                            ...staffList,
+                            { id: `STF-${staffList.length + 1}`, name, role, phone, shift: 'Full Shift', tables: 'Assigned', status: 'Active', salary: sal, salaryStatus: 'Pending', advancePaid: 0 }
+                          ]);
+                        }}
+                      >
+                        <Plus size={16} /> Add Staff Member
+                      </button>
+                    </div>
+
+                    <div className="staff-cards-grid">
+                      {staffList.map(stf => (
+                        <div key={stf.id} className="staff-member-card">
+                          <div className="smc-header">
+                            <div className="smc-avatar">
+                              <UserCheck size={20} color="#EA580C" />
+                            </div>
+                            <div>
+                              <h4>{stf.name}</h4>
+                              <span className="smc-role-tag">{stf.role}</span>
+                            </div>
+                          </div>
+                          <div className="smc-body">
+                            <p>📱 {stf.phone}</p>
+                            <p>🕒 Shift: {stf.shift}</p>
+                            <p>📍 Coverage: {stf.tables}</p>
+                            <p>💰 Salary: ₹{(stf.salary || 15000).toLocaleString('en-IN')}/mo</p>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                              <span className="smc-status active">● {stf.status}</span>
+                              <span style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                background: stf.salaryStatus === 'Paid' ? '#DCFCE7' : '#FEF3C7',
+                                color: stf.salaryStatus === 'Paid' ? '#166534' : '#92400E'
+                              }}>
+                                {stf.salaryStatus === 'Paid' ? 'Salary Paid' : 'Salary Pending'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="staff-salary-section">
+                    <div className="inv-top-bar">
+                      <div>
+                        <h3>💰 Staff Salary & Monthly Payroll</h3>
+                        <p>Calculate salaries, deduct advances, and disburse staff payments</p>
+                      </div>
+                      <button 
+                        className="btn-add-inv-item"
+                        onClick={() => {
+                          const unpaidStaff = staffList.filter(s => s.salaryStatus !== 'Paid');
+                          if (unpaidStaff.length === 0) {
+                            alert("All staff members have already been paid for this period!");
+                            return;
+                          }
+                          if (window.confirm(`Disburse monthly salary to all ${unpaidStaff.length} pending staff members?`)) {
+                            unpaidStaff.forEach(stf => handlePaySalary(stf));
+                          }
+                        }}
+                      >
+                        <DollarSign size={16} /> Pay All Pending Salaries
+                      </button>
+                    </div>
+
+                    {/* Payroll KPI Cards */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '20px' }}>
+                      <div style={{ background: '#FFFFFF', padding: '16px', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748B' }}>TOTAL MONTHLY BUDGET</span>
+                        <h3 style={{ fontSize: '1.4rem', color: '#0F172A', margin: '6px 0 0' }}>
+                          ₹{staffList.reduce((acc, s) => acc + (s.salary || 15000), 0).toLocaleString('en-IN')}
+                        </h3>
+                        <small style={{ color: '#94A3B8' }}>{staffList.length} staff on payroll</small>
+                      </div>
+
+                      <div style={{ background: '#FFFFFF', padding: '16px', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16A34A' }}>DISBURSED SALARY</span>
+                        <h3 style={{ fontSize: '1.4rem', color: '#16A34A', margin: '6px 0 0' }}>
+                          ₹{staffList.filter(s => s.salaryStatus === 'Paid').reduce((acc, s) => acc + ((s.salary || 15000) - (s.advancePaid || 0)), 0).toLocaleString('en-IN')}
+                        </h3>
+                        <small style={{ color: '#16A34A' }}>{staffList.filter(s => s.salaryStatus === 'Paid').length} paid this cycle</small>
+                      </div>
+
+                      <div style={{ background: '#FFFFFF', padding: '16px', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#EA580C' }}>PENDING DISBURSAL</span>
+                        <h3 style={{ fontSize: '1.4rem', color: '#EA580C', margin: '6px 0 0' }}>
+                          ₹{staffList.filter(s => s.salaryStatus !== 'Paid').reduce((acc, s) => acc + ((s.salary || 15000) - (s.advancePaid || 0)), 0).toLocaleString('en-IN')}
+                        </h3>
+                        <small style={{ color: '#EA580C' }}>{staffList.filter(s => s.salaryStatus !== 'Paid').length} awaiting payment</small>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    {/* Salary Table */}
+                    <div className="purchase-table-card">
+                      <table className="modern-admin-table">
+                        <thead>
+                          <tr>
+                            <th>Staff ID</th>
+                            <th>Employee Name</th>
+                            <th>Role</th>
+                            <th>Base Salary</th>
+                            <th>Advance Deductions</th>
+                            <th>Net Payable</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {staffList.map(stf => {
+                            const net = (stf.salary || 15000) - (stf.advancePaid || 0);
+                            return (
+                              <tr key={stf.id}>
+                                <td><strong>{stf.id}</strong></td>
+                                <td>
+                                  <strong>{stf.name}</strong>
+                                  <div style={{ fontSize: '0.75rem', color: '#64748B' }}>📱 {stf.phone}</div>
+                                </td>
+                                <td><span className="smc-role-tag">{stf.role}</span></td>
+                                <td>₹{(stf.salary || 15000).toLocaleString('en-IN')}</td>
+                                <td style={{ color: stf.advancePaid > 0 ? '#DC2626' : '#64748B' }}>
+                                  -₹{(stf.advancePaid || 0).toLocaleString('en-IN')}
+                                </td>
+                                <td><strong style={{ color: '#0F172A', fontSize: '0.95rem' }}>₹{net.toLocaleString('en-IN')}</strong></td>
+                                <td>
+                                  <span style={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: 800,
+                                    padding: '3px 8px',
+                                    borderRadius: '50px',
+                                    background: stf.salaryStatus === 'Paid' ? '#DCFCE7' : '#FEF3C7',
+                                    color: stf.salaryStatus === 'Paid' ? '#166534' : '#B45309'
+                                  }}>
+                                    {stf.salaryStatus === 'Paid' ? 'Paid' : 'Pending'}
+                                  </span>
+                                </td>
+                                <td>
+                                  {stf.salaryStatus === 'Paid' ? (
+                                    <span style={{ fontSize: '0.78rem', color: '#16A34A', fontWeight: 800 }}>
+                                      ✅ Disbursed ({stf.salaryPaidDate ? new Date(stf.salaryPaidDate).toLocaleDateString('en-IN') : 'Nov 2026'})
+                                    </span>
+                                  ) : (
+                                    <button 
+                                      className="btn-tbl-action settle"
+                                      onClick={() => handlePaySalary(stf)}
+                                      title="Disburse Salary & Add to Expenses"
+                                    >
+                                      💵 Pay Salary
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1765,13 +2533,13 @@ export const AdminConsole = ({
           <span>Report</span>
         </button>
 
-        {/* 5. Menu */}
+        {/* 5. Menu (Opens Slide-in 16-Module ERP Sidebar) */}
         <button 
-          className={`abd-item ${activeDownTab === 'menu' ? 'active' : ''}`}
+          className={`abd-item ${isSidebarOpen || activeDownTab === 'menu' ? 'active' : ''}`}
           onClick={() => {
-            setActiveDownTab('menu');
-            setMenuSubTab('menu-items');
+            setIsSidebarOpen(prev => !prev);
           }}
+          title="Open ERP Modules Sidebar"
         >
           <UtensilsCrossed size={20} />
           <span>Menu</span>
@@ -2445,12 +3213,31 @@ export const AdminConsole = ({
           gap: 4px;
         }
 
-        .btn-confirm { background: #0F172A; color: white; }
-        .btn-kitchen { background: #EA580C; color: white; }
-        .btn-ready { background: #16A34A; color: white; }
-        .btn-served { background: #2563EB; color: white; }
-        .btn-wa { background: #22C55E; color: white; }
-        .btn-print { background: #334155; color: white; }
+        .btn-bill-action {
+          background: #EA580C;
+          color: white;
+          box-shadow: 0 4px 12px rgba(234, 88, 12, 0.25);
+        }
+        .btn-bill-action:hover {
+          background: #C2410C;
+        }
+
+        .btn-bill-done {
+          background: #DCFCE7;
+          color: #16A34A;
+          border: 1px solid #86EFAC;
+        }
+        .btn-bill-done:hover {
+          background: #BBF7D0;
+        }
+
+        .btn-wa {
+          background: #22C55E;
+          color: white;
+        }
+        .btn-wa:hover {
+          background: #16A34A;
+        }
 
         /* POS Quick Bill View */
         .create-bill-pos-container {
@@ -3047,6 +3834,420 @@ export const AdminConsole = ({
 
         .abd-badge-dot.warning {
           background: #F59E0B;
+        }
+
+        /* ========================================================= */
+        /* 🧭 SLIDE-IN ERP MODULES SIDEBAR DRAWER (16 MODULES) */
+        /* ========================================================= */
+        .admin-sidebar-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(15, 23, 42, 0.7);
+          backdrop-filter: blur(5px);
+          -webkit-backdrop-filter: blur(5px);
+          z-index: 99999;
+          display: flex;
+          align-items: stretch;
+        }
+
+        .admin-sidebar-drawer {
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          width: 340px;
+          max-width: 86vw;
+          height: 100vh;
+          height: 100dvh;
+          background: #FFFFFF;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 15px 0 40px rgba(0, 0, 0, 0.25);
+          z-index: 100000;
+          overflow: hidden;
+        }
+
+        .asd-quick-shortcuts {
+          display: flex;
+          gap: 6px;
+          padding: 4px 16px 12px;
+          overflow-x: auto;
+          border-bottom: 1px solid #F1F5F9;
+          flex-shrink: 0;
+        }
+
+        .asd-qs-btn {
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 50px;
+          padding: 5px 11px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: #334155;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          white-space: nowrap;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .asd-qs-btn:hover {
+          background: #FFF7ED;
+          border-color: #FDBA74;
+          color: #EA580C;
+        }
+
+        .asd-qs-btn.salary {
+          background: #ECFDF5;
+          border-color: #A7F3D0;
+          color: #059669;
+        }
+
+        .asd-qs-btn.salary:hover {
+          background: #D1FAE5;
+          border-color: #6EE7B7;
+        }
+
+        .asd-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 18px 18px 14px;
+          border-bottom: 1px solid #F1F5F9;
+          background: #FAFAFC;
+        }
+
+        .asd-brand-info {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .asd-logo-bubble {
+          width: 42px;
+          height: 42px;
+          border-radius: 14px;
+          background: linear-gradient(135deg, #EA580C, #C2410C);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 12px rgba(234, 88, 12, 0.3);
+          flex-shrink: 0;
+        }
+
+        .asd-title {
+          font-size: 1.05rem;
+          font-weight: 800;
+          color: #0F172A;
+          margin: 0 0 2px;
+          line-height: 1.2;
+        }
+
+        .asd-badge {
+          font-size: 0.72rem;
+          font-weight: 800;
+          color: #EA580C;
+          background: #FFF7ED;
+          padding: 2px 8px;
+          border-radius: 6px;
+          display: inline-block;
+        }
+
+        .asd-close-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #64748B;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .asd-close-btn:hover {
+          background: #FEE2E2;
+          color: #EF4444;
+          border-color: #FECACA;
+        }
+
+        .asd-search-box {
+          margin: 12px 16px 8px;
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 12px;
+          padding: 0 12px;
+          height: 42px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+
+        .asd-search-box input {
+          border: none;
+          background: transparent;
+          outline: none;
+          width: 100%;
+          font-size: 0.85rem;
+          color: #0F172A;
+        }
+
+        .asd-clear-search {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #94A3B8;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+        }
+
+        .asd-modules-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 8px 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+        }
+
+        .asd-module-group {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .asd-module-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 9px 12px;
+          border-radius: 14px;
+          cursor: pointer;
+          transition: all 0.15s;
+          border: 1px solid transparent;
+          user-select: none;
+        }
+
+        .asd-module-row:hover {
+          background: #F8FAFC;
+          border-color: #E2E8F0;
+        }
+
+        .asd-module-row.active {
+          background: #FFF7ED;
+          border-color: #FDBA74;
+        }
+
+        .asd-mr-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex: 1;
+          min-width: 0;
+        }
+
+        .asd-module-icon-wrap {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: #F1F5F9;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #475569;
+          flex-shrink: 0;
+          transition: all 0.15s;
+        }
+
+        .asd-module-row.active .asd-module-icon-wrap {
+          background: #EA580C;
+          color: #FFFFFF;
+        }
+
+        .asd-module-name {
+          display: block;
+          font-size: 0.86rem;
+          font-weight: 700;
+          color: #0F172A;
+          line-height: 1.2;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .asd-module-row.active .asd-module-name {
+          color: #C2410C;
+        }
+
+        .asd-module-subtext {
+          display: block;
+          font-size: 0.68rem;
+          color: #94A3B8;
+          margin-top: 1px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .asd-mr-right {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+
+        .asd-pill-badge {
+          font-size: 0.65rem;
+          font-weight: 800;
+          padding: 2px 7px;
+          border-radius: 50px;
+        }
+
+        .asd-pill-badge.primary {
+          background: #FFF7ED;
+          color: #EA580C;
+        }
+
+        .asd-pill-badge.warning {
+          background: #FEF3C7;
+          color: #B45309;
+        }
+
+        .asd-expand-toggle-btn {
+          background: none;
+          border: none;
+          padding: 4px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .asd-chevron {
+          transition: transform 0.2s;
+          color: #94A3B8;
+        }
+
+        .asd-chevron.rotated {
+          transform: rotate(90deg);
+          color: #EA580C;
+        }
+
+        .asd-subitems-tray {
+          padding: 2px 0 6px 48px;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          overflow: hidden;
+        }
+
+        .asd-subitem-link {
+          background: none;
+          border: none;
+          text-align: left;
+          padding: 6px 10px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: #64748B;
+          cursor: pointer;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.15s;
+        }
+
+        .asd-subitem-link:hover {
+          color: #EA580C;
+          background: #FFF7ED;
+        }
+
+        .asd-sub-bullet {
+          font-size: 0.7rem;
+          color: #CBD5E1;
+        }
+
+        .asd-footer {
+          border-top: 1px solid #F1F5F9;
+          padding: 14px 18px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: #FAFAFC;
+          flex-shrink: 0;
+        }
+
+        .asd-user-badge {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.75rem;
+          font-weight: 700;
+          color: #10B981;
+        }
+
+        .asd-user-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #10B981;
+          box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+
+        .asd-footer-logout {
+          background: #FEE2E2;
+          color: #DC2626;
+          border: none;
+          padding: 6px 14px;
+          border-radius: 50px;
+          font-size: 0.78rem;
+          font-weight: 800;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          transition: background 0.15s;
+        }
+
+        .asd-footer-logout:hover {
+          background: #FECACA;
+        }
+
+        .atb-sidebar-toggle-btn {
+          width: 38px;
+          height: 38px;
+          border-radius: 12px;
+          background: #FFFFFF;
+          border: 1px solid #E2E8F0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          color: #0F172A;
+          margin-right: 12px;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+          transition: all 0.15s;
+          flex-shrink: 0;
+        }
+
+        .atb-sidebar-toggle-btn:hover {
+          background: #FFF7ED;
+          color: #EA580C;
+          border-color: #FDBA74;
+        }
+
+        .atb-sidebar-toggle-btn:active {
+          transform: scale(0.95);
         }
       `}</style>
     </div>

@@ -94,6 +94,9 @@ const orderSchema = new mongoose.Schema({
   waiterName: { type: String, default: 'Staff' },
   paymentMethod: { type: String, default: 'Cash' }, // Cash, UPI, Card
   paymentStatus: String,
+  isBilled: { type: Boolean, default: false },
+  isClosed: { type: Boolean, default: false },
+  billedAt: Date,
   notes: String,
   status: { type: String, default: 'Pending' },
   created_at: { type: Date, default: Date.now }
@@ -206,8 +209,21 @@ app.post('/api/orders', async (req, res) => {
 
 app.patch('/api/orders/:id/status', async (req, res) => {
   try {
-    await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
-    res.json({ success: true });
+    const update = { status: req.body.status };
+    if (req.body.paymentStatus) update.paymentStatus = req.body.paymentStatus;
+    if (req.body.takeawayStatus) update.takeawayStatus = req.body.takeawayStatus;
+    if (req.body.isBilled !== undefined) update.isBilled = req.body.isBilled;
+    if (req.body.isClosed !== undefined) update.isClosed = req.body.isClosed;
+    if (req.body.billedAt) update.billedAt = req.body.billedAt;
+
+    let order = null;
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      order = await Order.findByIdAndUpdate(req.params.id, update, { new: true });
+    }
+    if (!order) {
+      order = await Order.findOneAndUpdate({ id: req.params.id }, update, { new: true });
+    }
+    res.json({ success: true, order });
   } catch (err) { res.status(500).json(err); }
 });
 

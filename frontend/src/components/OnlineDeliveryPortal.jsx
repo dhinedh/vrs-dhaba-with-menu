@@ -45,6 +45,9 @@ const getDishImage = (item) => {
   if (name.includes("fried rice") || name.includes("rice and chicken")) {
     return "https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&auto=format&fit=crop&q=80";
   }
+  if (name.includes("65") || name.includes("lollipop") || cat.includes("65")) {
+    return "https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=500&auto=format&fit=crop&q=80";
+  }
   if (name.includes("burger")) {
     return "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=80";
   }
@@ -54,25 +57,31 @@ const getDishImage = (item) => {
   if (name.includes("salad") || name.includes("fruit")) {
     return "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=500&auto=format&fit=crop&q=80";
   }
-  if (name.includes("crab") || name.includes("fish") || name.includes("seafood") || name.includes("prawn")) {
+  if (name.includes("crab") || name.includes("fish") || name.includes("seafood") || name.includes("prawn") || name.includes("squid")) {
     return "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=500&auto=format&fit=crop&q=80";
   }
   if (name.includes("roti") || name.includes("naan") || name.includes("paratha") || cat.includes("roti")) {
     return "https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?w=500&auto=format&fit=crop&q=80";
   }
+  if (name.includes("mutton") || name.includes("kadai") || name.includes("quail") || name.includes("kozhi")) {
+    return "https://images.unsplash.com/photo-1544025162-d76694265947?w=500&auto=format&fit=crop&q=80";
+  }
   if (name.includes("chicken") || cat.includes("chicken")) {
     return "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=500&auto=format&fit=crop&q=80";
   }
-  if (name.includes("paneer") || name.includes("veg") || cat.includes("veg")) {
+  if (name.includes("dal")) {
+    return "https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=500&auto=format&fit=crop&q=80";
+  }
+  if (name.includes("paneer") || name.includes("veg") || cat.includes("veg") || name.includes("gobi") || name.includes("mushroom")) {
     return "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=500&auto=format&fit=crop&q=80";
   }
-  if (name.includes("biryani") || name.includes("rice") || cat.includes("rice")) {
+  if (name.includes("biryani") || name.includes("rice") || cat.includes("rice") || name.includes("sadham")) {
     return "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=500&auto=format&fit=crop&q=80";
   }
   if (name.includes("noodle") || cat.includes("noodle")) {
     return "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=500&auto=format&fit=crop&q=80";
   }
-  if (name.includes("egg") || cat.includes("egg")) {
+  if (name.includes("egg") || cat.includes("egg") || name.includes("podimas") || name.includes("keema")) {
     return "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500&auto=format&fit=crop&q=80";
   }
 
@@ -766,46 +775,10 @@ export const OnlineDeliveryPortal = ({
       </AnimatePresence>
 
       {/* ========================================================= */}
-      {/* 🔝 SCREEN 1 HEADER (Only for Home & Menu) */}
+      {/* 🔝 SCREEN 1 SEARCH BAR & FILTERS (Only for Home & Menu) */}
       {/* ========================================================= */}
       {(activeTab === "Home" || activeTab === "Menu") && (
         <header className="pink-top-header">
-          <div className="pth-row">
-            <button 
-              className="pth-icon-btn menu-btn"
-              onClick={() => setShowFilterDrawer(prev => !prev)}
-              aria-label="Filter or Menu"
-            >
-              <MenuIcon size={20} color="#1E293B" />
-            </button>
-
-            <div className="pth-headline-col">
-              <h1 className="pth-main-title">
-                Find Your<br />
-                <span className="favorite-highlight">Favorite</span> Food.
-              </h1>
-            </div>
-
-            <div className="pth-right-btns">
-              <button 
-                className="pth-icon-btn notif-btn"
-                onClick={() => setShowWelcomeSplash(true)}
-                title="View Welcome Splash"
-              >
-                <Sparkles size={18} color="#FF2E63" />
-              </button>
-
-              <button 
-                className="pth-icon-btn notif-btn"
-                onClick={() => setActiveTab("Offer")}
-                aria-label="Notifications & Deals"
-              >
-                <Bell size={20} color="#10B981" />
-                <span className="notif-green-badge" />
-              </button>
-            </div>
-          </div>
-
           {/* Search bar + Pink Filter button */}
           <div className="pth-search-row">
             <div className="pth-search-input-wrapper">
@@ -1724,11 +1697,25 @@ export const OnlineDeliveryPortal = ({
       {/* 🎨 COMPLETE COMPONENT STYLES */}
       {/* ========================================================= */}
       <style>{`
+        .pink-theme-app-container,
+        .pink-theme-app-container *,
+        .pink-theme-app-container h1,
+        .pink-theme-app-container h2,
+        .pink-theme-app-container h3,
+        .pink-theme-app-container h4,
+        .pink-theme-app-container h5,
+        .pink-theme-app-container h6,
+        .pink-theme-app-container p,
+        .pink-theme-app-container span,
+        .pink-theme-app-container button,
+        .pink-theme-app-container input {
+          font-family: -apple-system, BlinkMacSystemFont, 'Plus Jakarta Sans', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+        }
+
         .pink-theme-app-container {
           min-height: 100vh;
           background: #FAFAFC;
           color: #1E293B;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
           padding-bottom: 90px;
           max-width: 520px;
           margin: 0 auto;
@@ -2183,72 +2170,11 @@ export const OnlineDeliveryPortal = ({
         }
 
         /* ------------------------------------------------------------- */
-        /* TOP HEADER */
+        /* TOP HEADER (SEARCH & FILTERS) */
         /* ------------------------------------------------------------- */
         .pink-top-header {
-          padding: 24px 20px 14px;
+          padding: 16px 20px 12px;
           background: #FAFAFC;
-        }
-
-        .pth-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 22px;
-        }
-
-        .pth-right-btns {
-          display: flex;
-          gap: 10px;
-        }
-
-        .pth-icon-btn {
-          width: 44px;
-          height: 44px;
-          border-radius: 14px;
-          background: #FFFFFF;
-          border: 1px solid #F1F5F9;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-          position: relative;
-          transition: transform 0.15s;
-        }
-
-        .pth-icon-btn:active {
-          transform: scale(0.95);
-        }
-
-        .notif-green-badge {
-          position: absolute;
-          top: 10px;
-          right: 11px;
-          width: 8px;
-          height: 8px;
-          background: #10B981;
-          border-radius: 50%;
-          border: 2px solid #FFFFFF;
-        }
-
-        .pth-headline-col {
-          flex: 1;
-          padding: 0 16px;
-        }
-
-        .pth-main-title {
-          font-size: 1.75rem;
-          font-weight: 800;
-          line-height: 1.22;
-          color: #0F172A;
-          letter-spacing: -0.02em;
-          margin: 0;
-        }
-
-        .favorite-highlight {
-          color: #10B981;
-          font-weight: 800;
         }
 
         .pth-search-row {
@@ -3204,6 +3130,195 @@ export const OnlineDeliveryPortal = ({
           display: flex;
           align-items: center;
           gap: 4px;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* SUBPAGE HEADER BAR (Offers, Orders, Account, Cart) */
+        /* ------------------------------------------------------------- */
+        .subpage-header-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 0 18px;
+        }
+
+        .subpage-back-btn {
+          width: 42px;
+          height: 42px;
+          border-radius: 14px;
+          background: #FFFFFF;
+          border: 1px solid #F1F5F9;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+          transition: transform 0.15s;
+        }
+
+        .subpage-back-btn:active {
+          transform: scale(0.95);
+        }
+
+        .subpage-header-title {
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: #0F172A;
+          margin: 0;
+          letter-spacing: -0.01em;
+        }
+
+        /* ------------------------------------------------------------- */
+        /* ORDER HISTORY & EMPTY STATES */
+        /* ------------------------------------------------------------- */
+        .past-orders-box {
+          margin-top: 10px;
+        }
+
+        .pob-title {
+          font-size: 1.2rem;
+          font-weight: 800;
+          color: #0F172A;
+          margin: 0 0 16px;
+          letter-spacing: -0.01em;
+        }
+
+        .empty-orders-view,
+        .empty-cart-state {
+          text-align: center;
+          padding: 44px 24px;
+          background: #FFFFFF;
+          border-radius: 26px;
+          border: 1px solid #F1F5F9;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          margin: 16px 0;
+        }
+
+        .empty-orders-view h4,
+        .empty-cart-state h3 {
+          font-size: 1.25rem;
+          font-weight: 800;
+          color: #0F172A;
+          margin: 16px 0 6px;
+        }
+
+        .empty-orders-view p,
+        .empty-cart-state p {
+          font-size: 0.88rem;
+          color: #64748B;
+          margin: 0 0 22px;
+          max-width: 260px;
+          line-height: 1.5;
+        }
+
+        .btn-pink-primary {
+          background: #FF2E63 !important;
+          color: #FFFFFF !important;
+          border: none !important;
+          padding: 13px 32px !important;
+          border-radius: 50px !important;
+          font-size: 0.95rem !important;
+          font-weight: 800 !important;
+          cursor: pointer !important;
+          box-shadow: 0 8px 24px rgba(255, 46, 99, 0.4) !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 8px !important;
+          transition: transform 0.15s, box-shadow 0.15s !important;
+        }
+
+        .btn-pink-primary:hover {
+          background: #E01E53 !important;
+          box-shadow: 0 10px 28px rgba(255, 46, 99, 0.5) !important;
+        }
+
+        .btn-pink-primary:active {
+          transform: scale(0.96) !important;
+        }
+
+        .past-orders-list {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .past-order-item-card {
+          background: #FFFFFF;
+          border-radius: 20px;
+          padding: 16px;
+          border: 1px solid #F1F5F9;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+        }
+
+        .poi-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 10px;
+        }
+
+        .poi-top strong {
+          display: block;
+          font-size: 0.95rem;
+          color: #0F172A;
+        }
+
+        .poi-top small {
+          font-size: 0.75rem;
+          color: #94A3B8;
+        }
+
+        .poi-status-tag {
+          font-size: 0.72rem;
+          font-weight: 800;
+          padding: 4px 10px;
+          border-radius: 50px;
+          background: #ECFDF5;
+          color: #059669;
+        }
+
+        .poi-items-list {
+          font-size: 0.82rem;
+          color: #475569;
+          line-height: 1.4;
+          padding: 8px 0;
+          border-top: 1px dashed #F1F5F9;
+          border-bottom: 1px dashed #F1F5F9;
+          margin-bottom: 10px;
+        }
+
+        .poi-bottom {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .poi-bottom strong {
+          font-size: 1rem;
+          color: #FF2E63;
+        }
+
+        .poi-reorder-btn {
+          background: #FFF0F3;
+          color: #FF2E63;
+          border: none;
+          padding: 6px 14px;
+          border-radius: 50px;
+          font-size: 0.78rem;
+          font-weight: 800;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .poi-reorder-btn:hover {
+          background: #FFE2E7;
         }
 
         /* Account */
