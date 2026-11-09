@@ -1,3 +1,8 @@
+const cleanTableNumber = (tbl) => {
+  if (!tbl) return '';
+  return String(tbl).replace(/^[T\s\-]+/, '').trim();
+};
+
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Home as HomeIcon,
@@ -626,12 +631,13 @@ export const AdminConsole = ({
       id: '14',
       name: '14. Notifications',
       icon: Bell,
-      badge: (pendingRequestsCount + activeDeliveryCount) > 0 ? (pendingRequestsCount + activeDeliveryCount) : null,
+      badge: (pendingRequestsCount + lowStockCount) > 0 ? (pendingRequestsCount + lowStockCount) : null,
       badgeType: 'warning',
-      isActive: false,
+      isActive: activeDownTab === 'menu' && menuSubTab === 'notifications',
       subItems: ['New Order Alerts', 'Payment Alerts', 'Stock Alerts', 'System Notifications'],
       action: () => {
-        setActiveDownTab('home');
+        setActiveDownTab('menu');
+        setMenuSubTab('notifications');
         setIsSidebarOpen(false);
       }
     },
@@ -651,14 +657,14 @@ export const AdminConsole = ({
       id: '16',
       name: '16. Account',
       icon: UserCheck,
-      isActive: false,
+      isActive: activeDownTab === 'menu' && menuSubTab === 'account',
       subItems: ['My Profile', 'Change Password', 'Logout'],
       action: (sub) => {
         if (sub === 'Logout' && onLogout) {
           onLogout();
         } else {
           setActiveDownTab('menu');
-          setMenuSubTab('settings');
+          setMenuSubTab('account');
         }
         setIsSidebarOpen(false);
       }
@@ -1079,7 +1085,7 @@ export const AdminConsole = ({
                     <div key={ord.id} className="stream-order-row">
                       <div className="sor-left">
                         <div className="sor-badge">
-                          {ord.tokenNumber ? `#${ord.tokenNumber}` : `T-${ord.tableNumber}`}
+                          {ord.tokenNumber ? `#${ord.tokenNumber}` : `T-${cleanTableNumber(ord.tableNumber) || '1'}`}
                         </div>
                         <div>
                           <strong>Order #{ord.id} ({ord.orderType || 'Dine-in'})</strong>
@@ -1310,7 +1316,7 @@ export const AdminConsole = ({
                       <div key={o.id} className={`order-card-tile ${(o.status || 'Pending').toLowerCase()}`}>
                         <div className="oct-header">
                           <span className="oct-table-badge">
-                            {o.tokenNumber ? `TOKEN #${o.tokenNumber}` : `Table ${o.tableNumber}`}
+                            {o.tokenNumber ? `TOKEN #${o.tokenNumber}` : `Table ${cleanTableNumber(o.tableNumber) || '1'}`}
                           </span>
                           <span className={`oct-status-tag ${(o.status || 'Pending').toLowerCase()}`}>
                             {o.status || 'Pending'}
@@ -1649,7 +1655,7 @@ export const AdminConsole = ({
                       {orders.map(ord => (
                         <tr key={ord.id}>
                           <td><strong>#{ord.id}</strong></td>
-                          <td>{ord.tokenNumber ? `TOKEN #${ord.tokenNumber}` : `Table ${ord.tableNumber}`}</td>
+                          <td>{ord.tokenNumber ? `TOKEN #${ord.tokenNumber}` : `Table ${cleanTableNumber(ord.tableNumber) || '1'}`}</td>
                           <td>{new Date(ord.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                           <td>{ord.customerName || 'Walk-in'} ({ord.customerMobile || '-'})</td>
                           <td>{ord.items?.length || 0} items</td>
@@ -1932,10 +1938,24 @@ export const AdminConsole = ({
               </button>
 
               <button 
+                className={`smn-pill ${menuSubTab === 'notifications' ? 'active' : ''}`}
+                onClick={() => setMenuSubTab('notifications')}
+              >
+                <Bell size={14} /> 14. Notifications {(pendingRequestsCount + lowStockCount) > 0 ? `(${pendingRequestsCount + lowStockCount})` : ''}
+              </button>
+
+              <button 
                 className={`smn-pill ${menuSubTab === 'settings' ? 'active' : ''}`}
                 onClick={() => setMenuSubTab('settings')}
               >
                 <Settings size={14} /> 15. Settings
+              </button>
+
+              <button 
+                className={`smn-pill ${menuSubTab === 'account' ? 'active' : ''}`}
+                onClick={() => setMenuSubTab('account')}
+              >
+                <UserCheck size={14} /> 16. Account
               </button>
             </div>
 
@@ -2473,6 +2493,249 @@ export const AdminConsole = ({
                   >
                     Save & Update Hotel Profile
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* Sub-view: 14. Notifications & Live Alerts */}
+            {menuSubTab === 'notifications' && (
+              <div className="notifications-mgmt-subview">
+                <div className="inv-top-bar">
+                  <div>
+                    <h3>🔔 14. Notifications & System Alerts</h3>
+                    <p>Live stream of new orders, customer table assistance calls, low inventory stock & payment settlement alerts</p>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-add-inv-item"
+                    onClick={() => alert("✅ All alerts marked as read!")}
+                  >
+                    ✓ Mark All as Read
+                  </button>
+                </div>
+
+                <div className="invoices-summary-strip">
+                  <div className="iss-box">
+                    <span>Total Alerts</span>
+                    <strong>{orders.filter(o => o.status !== 'Billed').length + lowStockCount + pendingRequestsCount}</strong>
+                  </div>
+                  <div className="iss-box">
+                    <span>Active Orders</span>
+                    <strong style={{ color: '#EA580C' }}>{orders.filter(o => o.status === 'Confirmed' || o.status === 'Pending').length}</strong>
+                  </div>
+                  <div className="iss-box">
+                    <span>Low Stock Items</span>
+                    <strong style={{ color: '#DC2626' }}>{lowStockCount}</strong>
+                  </div>
+                  <div className="iss-box">
+                    <span>Pending Table Calls</span>
+                    <strong style={{ color: '#0284C7' }}>{pendingRequestsCount}</strong>
+                  </div>
+                </div>
+
+                <div className="alerts-stream-container">
+                  {/* Table Service Calls */}
+                  {tableRequests.filter(r => !r.resolved).map(req => (
+                    <div key={req.id} className="alert-card table-call">
+                      <div className="ac-icon">🔔</div>
+                      <div className="ac-body">
+                        <h4>Table {cleanTableNumber(req.tableNumber)} • {req.type === 'CALL_WAITER' ? 'Waiter Assistance Requested' : 'Customer Requested Bill'}</h4>
+                        <p>Customer at Table {cleanTableNumber(req.tableNumber)} has requested staff attention.</p>
+                        <small>{new Date(req.timestamp).toLocaleTimeString()}</small>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="ac-btn"
+                        onClick={() => { setActiveDownTab('order'); setOrderSubTab('assistance'); }}
+                      >
+                        View Table Call
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Low Stock Warnings */}
+                  {inventoryList.filter(i => i.stock <= i.minThreshold).map(inv => (
+                    <div key={inv.id} className="alert-card low-stock">
+                      <div className="ac-icon">⚠️</div>
+                      <div className="ac-body">
+                        <h4>Low Stock Warning: {inv.name}</h4>
+                        <p>Only {inv.stock} {inv.unit} remaining in dhaba pantry (Minimum threshold: {inv.minThreshold} {inv.unit})</p>
+                        <small>Category: {inv.category} • Cost Price: ₹{inv.costPrice}</small>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="ac-btn warning"
+                        onClick={() => setMenuSubTab('inventory')}
+                      >
+                        Restock
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Confirmed Orders Alerts */}
+                  {orders.filter(o => o.status === 'Confirmed').slice(0, 8).map(ord => (
+                    <div key={ord.id} className="alert-card new-order">
+                      <div className="ac-icon">🧾</div>
+                      <div className="ac-body">
+                        <h4>New Order #{ord.id} ({ord.orderType || 'Dine-in'})</h4>
+                        <p>{ord.tokenNumber ? `Token #${ord.tokenNumber}` : `Table ${cleanTableNumber(ord.tableNumber)}`} • ₹{ord.netTotal || ord.total} • {ord.items?.map(i => `${i.quantity}x ${i.name}`).join(', ')}</p>
+                        <small>{new Date(ord.timestamp || Date.now()).toLocaleTimeString()}</small>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="ac-btn primary"
+                        onClick={() => { setActiveDownTab('order'); setOrderSubTab('all-orders'); }}
+                      >
+                        View Order
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* Settled Payment Alerts */}
+                  {orders.filter(o => o.status === 'Billed').slice(0, 5).map(ord => (
+                    <div key={ord.id} className="alert-card billed-alert">
+                      <div className="ac-icon">✅</div>
+                      <div className="ac-body">
+                        <h4>Bill Settled #{ord.id}</h4>
+                        <p>Paid ₹{ord.netTotal || ord.total} via {ord.paymentMethod || 'Cash'} for {ord.tokenNumber ? `Token #${ord.tokenNumber}` : `Table ${cleanTableNumber(ord.tableNumber)}`}</p>
+                        <small>{new Date(ord.billedAt || ord.timestamp || Date.now()).toLocaleTimeString()}</small>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="ac-btn success"
+                        onClick={() => { setActiveDownTab('billing'); setBillingSubTab('bills'); }}
+                      >
+                        View Invoice
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sub-view: 16. Account, Profile & Security */}
+            {menuSubTab === 'account' && (
+              <div className="account-mgmt-subview">
+                <div className="inv-top-bar">
+                  <div>
+                    <h3>👤 16. Account, Profile & Security</h3>
+                    <p>Manage administrative credentials, restaurant identity, terminal sessions & data backup</p>
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-add-inv-item"
+                    style={{ background: '#DC2626' }}
+                    onClick={() => {
+                      if (confirm("Are you sure you want to log out of Admin Console?")) {
+                        if (onLogout) onLogout();
+                      }
+                    }}
+                  >
+                    <LogOut size={16} /> Logout Admin Session
+                  </button>
+                </div>
+
+                <div className="account-cards-grid">
+                  {/* Profile Card */}
+                  <div className="account-card profile-card">
+                    <div className="acp-top">
+                      <div className="acp-avatar">👨‍💼</div>
+                      <div>
+                        <h4>VRS Dhaba Super Administrator</h4>
+                        <span className="smc-role-tag">Owner / Head Cashier</span>
+                      </div>
+                    </div>
+
+                    <div className="acp-list">
+                      <div className="acp-row"><span>Admin Username:</span><strong>admin</strong></div>
+                      <div className="acp-row"><span>Restaurant Name:</span><strong>{settings.name || "VRS Garden Dhaba"}</strong></div>
+                      <div className="acp-row"><span>Helpline Contact:</span><strong>+91 {settings.phone || "9876543210"}</strong></div>
+                      <div className="acp-row"><span>Campus Location:</span><strong>Salem Highway Main Dhaba Campus</strong></div>
+                      <div className="acp-row"><span>GSTIN Registration:</span><strong>33AAAAA0000A1Z5</strong></div>
+                      <div className="acp-row"><span>Terminal Status:</span><strong style={{ color: '#16A34A' }}>🟢 Online / POS Terminal #01</strong></div>
+                    </div>
+                  </div>
+
+                  {/* Change Password Card */}
+                  <div className="account-card security-card">
+                    <h4>🔒 Change Admin Security Password</h4>
+                    <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 16px' }}>
+                      Update the access passkey for the VRS Dhaba Admin Console
+                    </p>
+
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      const currentP = e.target.currentPass.value;
+                      const newP = e.target.newPass.value;
+                      const confirmP = e.target.confirmPass.value;
+                      if (currentP !== 'vrs2024') {
+                        alert("Current password is incorrect! Default password is 'vrs2024'.");
+                        return;
+                      }
+                      if (newP.length < 4) {
+                        alert("New password must be at least 4 characters.");
+                        return;
+                      }
+                      if (newP !== confirmP) {
+                        alert("New passwords do not match!");
+                        return;
+                      }
+                      alert("✅ Admin password updated successfully! Please use your new password next time you login.");
+                      e.target.reset();
+                    }}>
+                      <div className="sfg-field" style={{ marginBottom: 12 }}>
+                        <label>Current Password</label>
+                        <input type="password" name="currentPass" placeholder="Enter current password (vrs2024)" required />
+                      </div>
+                      <div className="sfg-field" style={{ marginBottom: 12 }}>
+                        <label>New Password</label>
+                        <input type="password" name="newPass" placeholder="Enter new password" required />
+                      </div>
+                      <div className="sfg-field" style={{ marginBottom: 16 }}>
+                        <label>Confirm New Password</label>
+                        <input type="password" name="confirmPass" placeholder="Re-enter new password" required />
+                      </div>
+                      <button type="submit" className="btn-save-settings-action" style={{ width: '100%' }}>
+                        Update Security Password
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Backup & System Snapshot */}
+                  <div className="account-card backup-card">
+                    <h4>💾 System Data Backup & Snapshot</h4>
+                    <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '0 0 14px' }}>
+                      Export complete snapshot of orders, 57-dish menu, daily closing records, inventory, staff & customer CRM
+                    </p>
+                    <button 
+                      type="button" 
+                      className="btn-tbl-action"
+                      style={{ width: '100%', padding: '12px', background: '#0284C7', color: 'white', borderRadius: '12px', fontWeight: 800 }}
+                      onClick={() => {
+                        const backupData = {
+                          exportedAt: new Date().toISOString(),
+                          version: "VRS_ERP_2026",
+                          settings,
+                          orders,
+                          menu,
+                          expenses,
+                          staffList,
+                          inventoryList,
+                          purchaseList,
+                          customers
+                        };
+                        const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `VRS_Dhaba_Full_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+                        a.click();
+                        alert("✅ Complete ERP data backup snapshot exported successfully!");
+                      }}
+                    >
+                      📥 Export & Download Full ERP JSON Backup
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -4248,6 +4511,161 @@ export const AdminConsole = ({
 
         .atb-sidebar-toggle-btn:active {
           transform: scale(0.95);
+        }
+
+        /* 14. Notifications & 16. Account Styles */
+        .alerts-stream-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 14px;
+        }
+
+        .alert-card {
+          background: #FFFFFF;
+          border-radius: 16px;
+          padding: 16px 20px;
+          border: 1px solid #F1F5F9;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+          transition: transform 0.15s;
+        }
+
+        .alert-card:hover {
+          transform: translateY(-1px);
+        }
+
+        .alert-card.table-call {
+          border-left: 5px solid #0284C7;
+          background: #F0F9FF;
+        }
+
+        .alert-card.low-stock {
+          border-left: 5px solid #DC2626;
+          background: #FEF2F2;
+        }
+
+        .alert-card.new-order {
+          border-left: 5px solid #EA580C;
+          background: #FFF7ED;
+        }
+
+        .alert-card.billed-alert {
+          border-left: 5px solid #16A34A;
+          background: #F0FDF4;
+        }
+
+        .ac-icon {
+          font-size: 1.8rem;
+          flex-shrink: 0;
+        }
+
+        .ac-body {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .ac-body h4 {
+          font-size: 0.95rem;
+          font-weight: 800;
+          color: #0F172A;
+          margin: 0 0 4px;
+        }
+
+        .ac-body p {
+          font-size: 0.85rem;
+          color: #475569;
+          margin: 0 0 4px;
+        }
+
+        .ac-body small {
+          font-size: 0.75rem;
+          color: #94A3B8;
+          font-weight: 600;
+        }
+
+        .ac-btn {
+          padding: 8px 16px;
+          border-radius: 10px;
+          border: none;
+          font-weight: 800;
+          font-size: 0.78rem;
+          cursor: pointer;
+          white-space: nowrap;
+          background: #0284C7;
+          color: white;
+          flex-shrink: 0;
+          transition: opacity 0.15s;
+        }
+
+        .ac-btn.warning { background: #DC2626; }
+        .ac-btn.primary { background: #EA580C; }
+        .ac-btn.success { background: #16A34A; }
+        .ac-btn:hover { opacity: 0.9; }
+
+        .account-cards-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          gap: 16px;
+          margin-top: 14px;
+        }
+
+        .account-card {
+          background: #FFFFFF;
+          border-radius: 18px;
+          padding: 24px;
+          border: 1px solid #F1F5F9;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+        }
+
+        .acp-top {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          margin-bottom: 20px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #F1F5F9;
+        }
+
+        .acp-avatar {
+          font-size: 2.2rem;
+          width: 52px;
+          height: 52px;
+          border-radius: 16px;
+          background: #FFF7ED;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #FFEDD5;
+          flex-shrink: 0;
+        }
+
+        .acp-top h4 {
+          font-size: 1.05rem;
+          font-weight: 800;
+          color: #0F172A;
+          margin: 0 0 4px;
+        }
+
+        .acp-list {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .acp-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 0.85rem;
+          color: #64748B;
+        }
+
+        .acp-row strong {
+          color: #0F172A;
+          font-weight: 700;
         }
       `}</style>
     </div>

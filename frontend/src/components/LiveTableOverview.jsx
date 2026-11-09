@@ -1,9 +1,11 @@
-import React from 'react';
-import { Table, Clock, CheckCircle2, DollarSign, Plus, Printer, Eye } from 'lucide-react';
+import React, { useState } from 'react';
+import { Table, Clock, CheckCircle2, DollarSign, Plus, Printer, Eye, ArrowRightLeft, Search, Filter } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export const LiveTableOverview = ({ orders = [], onSelectTable, onPrintBill }) => {
+export const LiveTableOverview = ({ orders = [], onSelectTable, onPrintBill, onTransferTable }) => {
   const totalTables = 20;
+  const [filterMode, setFilterMode] = useState('ALL'); // 'ALL' | 'FREE' | 'OCCUPIED'
+  const [searchTable, setSearchTable] = useState('');
 
   // Build table map
   const tableStatusMap = {};
@@ -18,43 +20,105 @@ export const LiveTableOverview = ({ orders = [], onSelectTable, onPrintBill }) =
   // Populate active non-billed orders into table map
   orders.forEach(o => {
     if (o.tableNumber && o.status !== 'Billed' && o.status !== 'Cancelled') {
-      const tNum = o.tableNumber.toString();
-      tableStatusMap[tNum] = {
-        tableNumber: tNum,
-        status: o.status || 'Pending',
-        order: o
-      };
+      const cleanNum = String(o.tableNumber || '').replace(/^[T\s\-]+/, '').trim();
+      if (cleanNum && tableStatusMap[cleanNum]) {
+        tableStatusMap[cleanNum] = {
+          tableNumber: cleanNum,
+          status: o.status || 'Pending',
+          order: o
+        };
+      }
     }
   });
 
   const tableList = Object.values(tableStatusMap);
-
   const activeCount = tableList.filter(t => t.status !== 'Free').length;
   const freeCount = totalTables - activeCount;
+
+  const filteredTables = tableList.filter(t => {
+    if (searchTable && !t.tableNumber.includes(searchTable.trim())) return false;
+    if (filterMode === 'FREE') return t.status === 'Free';
+    if (filterMode === 'OCCUPIED') return t.status !== 'Free';
+    return true;
+  });
+
+  const handleTransfer = (currentTable) => {
+    const target = prompt(`Transfer active order from Table ${currentTable} to another Table (1-${totalTables}):`);
+    if (!target) return;
+    const cleanTarget = target.replace(/^[T\s\-]+/, '').trim();
+    if (!cleanTarget || isNaN(cleanTarget) || Number(cleanTarget) < 1 || Number(cleanTarget) > totalTables) {
+      alert(`Invalid table number! Please enter a number between 1 and ${totalTables}.`);
+      return;
+    }
+    if (cleanTarget === String(currentTable)) {
+      alert("Source and destination table are the same!");
+      return;
+    }
+    if (tableStatusMap[cleanTarget] && tableStatusMap[cleanTarget].status !== 'Free') {
+      const confirmShift = confirm(`Table ${cleanTarget} is currently Occupied. Do you want to merge/transfer order to it?`);
+      if (!confirmShift) return;
+    }
+
+    if (onTransferTable) {
+      onTransferTable(currentTable, cleanTarget);
+      alert(`✅ Order transferred successfully from Table ${currentTable} to Table ${cleanTarget}!`);
+    }
+  };
 
   return (
     <div className="table-overview-container">
       {/* Header & Quick Summary */}
       <div className="table-overview-header">
         <div>
-          <h2>🪑 Live Table Status & Occupancy Overview</h2>
-          <p>Real-time visual monitoring of all 20 Dhaba tables with active order details & bills</p>
+          <h2>🪑 03. Table Management & Live Layout</h2>
+          <p>Real-time visual monitoring, table layouts & instant order transfer across all 20 Dhaba tables</p>
         </div>
         <div className="table-summary-pills">
-          <div className="pill-item free">
+          <button 
+            type="button"
+            className={`pill-item ${filterMode === 'ALL' ? 'active' : ''}`}
+            onClick={() => setFilterMode('ALL')}
+          >
+            <span>All Tables: <strong>{totalTables}</strong></span>
+          </button>
+          <button 
+            type="button"
+            className={`pill-item free ${filterMode === 'FREE' ? 'active' : ''}`}
+            onClick={() => setFilterMode('FREE')}
+          >
             <span className="dot free"></span>
-            <span>Free Tables: <strong>{freeCount}</strong></span>
-          </div>
-          <div className="pill-item occupied">
+            <span>Available: <strong>{freeCount}</strong></span>
+          </button>
+          <button 
+            type="button"
+            className={`pill-item occupied ${filterMode === 'OCCUPIED' ? 'active' : ''}`}
+            onClick={() => setFilterMode('OCCUPIED')}
+          >
             <span className="dot occupied"></span>
             <span>Occupied: <strong>{activeCount}</strong></span>
-          </div>
+          </button>
         </div>
+      </div>
+
+      {/* Filter / Search Bar */}
+      <div className="table-search-bar-row">
+        <div className="tsb-input-wrapper">
+          <Search size={16} />
+          <input 
+            type="text" 
+            placeholder="Quick search table number (e.g. 5)..."
+            value={searchTable}
+            onChange={e => setSearchTable(e.target.value)}
+          />
+        </div>
+        <span className="tsb-count-text">
+          Showing {filteredTables.length} of {totalTables} tables
+        </span>
       </div>
 
       {/* Tables Grid */}
       <div className="tables-grid">
-        {tableList.map(tbl => {
+        {filteredTables.map(tbl => {
           const isFree = tbl.status === 'Free';
           const ord = tbl.order;
 
@@ -99,10 +163,28 @@ export const LiveTableOverview = ({ orders = [], onSelectTable, onPrintBill }) =
                   </div>
 
                   <div className="t-card-actions">
-                    <button className="btn-table-act add" onClick={() => onSelectTable(tbl.tableNumber, ord)}>
-                      <Plus size={13} /> Add Items
+                    <button 
+                      type="button" 
+                      className="btn-table-act add" 
+                      onClick={() => onSelectTable(tbl.tableNumber, ord)}
+                      title="Add items to table"
+                    >
+                      <Plus size={13} /> Add
                     </button>
-                    <button className="btn-table-act print" onClick={() => onPrintBill(ord)}>
+                    <button 
+                      type="button" 
+                      className="btn-table-act transfer" 
+                      onClick={() => handleTransfer(tbl.tableNumber)}
+                      title="Transfer table order"
+                    >
+                      <ArrowRightLeft size={13} /> Transfer
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn-table-act print" 
+                      onClick={() => onPrintBill(ord)}
+                      title="Generate bill"
+                    >
                       <Printer size={13} /> Bill
                     </button>
                   </div>
@@ -110,7 +192,11 @@ export const LiveTableOverview = ({ orders = [], onSelectTable, onPrintBill }) =
               ) : (
                 <div className="free-table-placeholder">
                   <span className="free-text">Table Available</span>
-                  <button className="btn-new-table-order" onClick={() => onSelectTable(tbl.tableNumber, null)}>
+                  <button 
+                    type="button" 
+                    className="btn-new-table-order" 
+                    onClick={() => onSelectTable(tbl.tableNumber, null)}
+                  >
                     <Plus size={14} /> New Order
                   </button>
                 </div>
@@ -121,18 +207,39 @@ export const LiveTableOverview = ({ orders = [], onSelectTable, onPrintBill }) =
       </div>
 
       <style>{`
-        .table-overview-container { display: flex; flex-direction: column; gap: 20px; }
-        .table-overview-header { background: white; padding: 24px; border-radius: 20px; border: 1px solid #F0F0F0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; }
-        .table-overview-header h2 { font-size: 1.5rem; color: #111; margin-bottom: 4px; }
-        .table-overview-header p { color: #666; font-size: 0.9rem; }
+        .table-overview-container { display: flex; flex-direction: column; gap: 16px; }
+        .table-overview-header { background: white; padding: 20px 24px; border-radius: 20px; border: 1px solid #F0F0F0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 15px; }
+        .table-overview-header h2 { font-size: 1.35rem; color: #0F172A; margin: 0 0 4px 0; font-weight: 800; }
+        .table-overview-header p { color: #64748B; font-size: 0.85rem; margin: 0; }
 
-        .table-summary-pills { display: flex; gap: 12px; }
-        .pill-item { padding: 8px 16px; border-radius: 50px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; }
-        .pill-item.free { background: #DCFCE7; color: #166534; }
-        .pill-item.occupied { background: #FEF3C7; color: #B45309; }
+        .table-summary-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+        .pill-item { 
+          padding: 8px 14px; 
+          border-radius: 50px; 
+          display: flex; 
+          align-items: center; 
+          gap: 6px; 
+          font-size: 0.8rem; 
+          font-weight: 700; 
+          background: #F8FAFC; 
+          border: 1px solid #E2E8F0; 
+          color: #334155; 
+          cursor: pointer; 
+          transition: all 0.15s; 
+        }
+        .pill-item.active { border-color: #EA580C; color: #EA580C; background: #FFF7ED; }
+        .pill-item.free { background: #DCFCE7; color: #166534; border-color: #BBF7D0; }
+        .pill-item.free.active { box-shadow: 0 0 0 2px #22C55E; }
+        .pill-item.occupied { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
+        .pill-item.occupied.active { box-shadow: 0 0 0 2px #EAB308; }
         .dot { width: 8px; height: 8px; border-radius: 50%; }
         .dot.free { background: #22C55E; }
         .dot.occupied { background: #EAB308; }
+
+        .table-search-bar-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .tsb-input-wrapper { display: flex; align-items: center; gap: 8px; background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 8px 14px; flex: 1; max-width: 340px; }
+        .tsb-input-wrapper input { border: none; outline: none; font-size: 0.85rem; width: 100%; font-weight: 600; color: #0F172A; }
+        .tsb-count-text { font-size: 0.8rem; color: #64748B; font-weight: 600; }
 
         .tables-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
         .table-card { background: white; border-radius: 18px; padding: 16px; border: 2px solid #F0F0F0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; justify-content: space-between; min-height: 180px; transition: all 0.2s; }
@@ -159,15 +266,17 @@ export const LiveTableOverview = ({ orders = [], onSelectTable, onPrintBill }) =
         .preview-item { display: flex; justify-content: space-between; color: #334155; }
         .more-items-tag { font-size: 0.65rem; color: #64748B; font-weight: 600; text-align: right; }
 
-        .t-card-actions { display: flex; gap: 6px; margin-top: 6px; }
-        .btn-table-act { flex: 1; padding: 8px; border: none; border-radius: 8px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
-        .btn-table-act.add { background: #E8621A; color: white; }
+        .t-card-actions { display: flex; gap: 5px; margin-top: 6px; }
+        .btn-table-act { flex: 1; padding: 8px 4px; border: none; border-radius: 8px; font-weight: 700; font-size: 0.72rem; display: flex; align-items: center; justify-content: center; gap: 3px; cursor: pointer; transition: opacity 0.15s; }
+        .btn-table-act:hover { opacity: 0.9; }
+        .btn-table-act.add { background: #EA580C; color: white; }
+        .btn-table-act.transfer { background: #0284C7; color: white; }
         .btn-table-act.print { background: #334155; color: white; }
 
         .free-table-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 20px 0; }
         .free-text { font-size: 0.8rem; color: #94A3B8; font-weight: 600; }
         .btn-new-table-order { background: #F1F5F9; border: 1px dashed #CBD5E1; color: #334155; padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer; }
-        .btn-new-table-order:hover { border-color: #E8621A; color: #E8621A; background: #FFF7ED; }
+        .btn-new-table-order:hover { border-color: #EA580C; color: #EA580C; background: #FFF7ED; }
       `}</style>
     </div>
   );

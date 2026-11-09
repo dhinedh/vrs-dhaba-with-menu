@@ -1799,7 +1799,7 @@ const AdminDashboard = ({
               <div key={o.id} className={`order-card ${(o.status || 'Pending').toLowerCase()}`}>
                 <div className="card-top">
                   <span className="table-tag">
-                    {o.tokenNumber ? `Token #${o.tokenNumber}` : `T-${o.tableNumber}`} ({o.orderType || 'Dine-in'})
+                    {o.tokenNumber ? `Token #${o.tokenNumber}` : `T-${String(o.tableNumber || '').replace(/^[T\s\-]+/, '') || '1'}`} ({o.orderType || 'Dine-in'})
                   </span>
                   <span className={`status-badge ${(o.status || 'Pending').toLowerCase()}`}>{o.status}</span>
                 </div>
