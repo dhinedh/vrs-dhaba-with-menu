@@ -29,7 +29,8 @@ import {
   Box,
   QrCode,
   Bell,
-  FileText
+  FileText,
+  Bike
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import heroBg from './assets/hero-bg.png';
@@ -44,6 +45,9 @@ import { ExpenseTracker, INITIAL_EXPENSES } from './components/ExpenseTracker';
 import { TakeawayManagement } from './components/TakeawayManagement';
 import { QRTableGenerator } from './components/QRTableGenerator';
 import { CustomerAssistance } from './components/CustomerAssistance';
+import { OnlineDeliveryPortal } from './components/OnlineDeliveryPortal';
+import { DeliveryManagement } from './components/DeliveryManagement';
+import { AdminConsole } from './components/AdminConsole';
 
 const INITIAL_MENU = [
   { id: "1", no: "101", name: "Roti", price: 15, veg: true, icon: "🫓", category: "Roti Varieties" },
@@ -102,10 +106,52 @@ const INITIAL_SETTINGS = {
   tagline: "Delicious Taste, Affordable Price",
   gst: 5,
   packagingCharge: 15,
+  deliveryFee: 30,
+  freeDeliveryAbove: 299,
+  deliveryEnabled: true,
   orderingMode: "SELF_ORDER" // 'SELF_ORDER' or 'MENU_ONLY'
 };
 
 const INITIAL_ORDERS = [
+  {
+    id: "ORD-DEL-402",
+    tableNumber: "Delivery",
+    tokenNumber: "DEL-84",
+    orderType: "Delivery",
+    items: [
+      { id: "3", no: "103", name: "Butter Naan", price: 50, veg: true, icon: "🫓", category: "Roti Varieties", quantity: 3 },
+      { id: "16", no: "209", name: "Butter Chicken", price: 210, veg: false, icon: "🍗", category: "Chicken Gravy", quantity: 1 },
+      { id: "34", no: "602", name: "Jeera Rice", price: 100, veg: true, icon: "🍚", category: "Veg Rice Varieties", quantity: 1 }
+    ],
+    subtotal: 460,
+    total: 460,
+    packagingCharge: 15,
+    deliveryFee: 0,
+    discountAmount: 50,
+    discountCode: "WELCOME50",
+    netTotal: 446,
+    customerMobile: "9876543210",
+    customerName: "Ramesh Kumar",
+    deliveryAddress: {
+      houseNo: "Plot 42, 2nd Cross",
+      streetArea: "Anna Nagar Main Road",
+      landmark: "Opp. SBI Bank",
+      pincode: "636001",
+      addressType: "Home"
+    },
+    deliveryPartner: {
+      name: "Karthik R.",
+      phone: "9845213456",
+      vehicle: "Hero Splendor (TN-30-AZ-4421)",
+      rating: 4.9
+    },
+    deliveryInstructions: "Leave at door, avoid calling",
+    deliveryStatus: "Dispatched",
+    paymentMethod: "UPI",
+    paymentStatus: "Paid Online (UPI)",
+    status: "Confirmed",
+    timestamp: "2026-08-17T13:45:00.000Z"
+  },
   {
     id: "ORD-307",
     tableNumber: "5",
@@ -286,13 +332,60 @@ const App = () => {
     return cats.map(c => ({ name: c, icon: "🍽️" }));
   }, [menu]);
 
+  const [customerViewMode, setCustomerViewMode] = useState(() => {
+    return localStorage.getItem("vrs_customer_mode") || "DELIVERY";
+  });
+
+  const handlePlaceDeliveryOrder = (newDeliveryOrder) => {
+    setOrders(prev => [newDeliveryOrder, ...prev]);
+
+    // Update Customer CRM
+    if (newDeliveryOrder.customerMobile && newDeliveryOrder.customerMobile.length === 10) {
+      const mob = newDeliveryOrder.customerMobile;
+      const spend = newDeliveryOrder.netTotal || newDeliveryOrder.total || 0;
+      const existingCust = customers.find(c => c.mobile === mob);
+      if (existingCust) {
+        const updatedCust = {
+          ...existingCust,
+          name: newDeliveryOrder.customerName || existingCust.name,
+          totalSpend: existingCust.totalSpend + spend,
+          totalVisits: existingCust.totalVisits + 1,
+          lastVisit: new Date().toISOString()
+        };
+        setCustomers(prev => prev.map(c => c.mobile === mob ? updatedCust : c));
+      } else {
+        const newCust = {
+          id: Date.now().toString(),
+          name: newDeliveryOrder.customerName || "Customer",
+          mobile: mob,
+          totalSpend: spend,
+          totalVisits: 1,
+          lastVisit: new Date().toISOString(),
+          tier: "Bronze",
+          tags: ["Online Delivery Customer"]
+        };
+        setCustomers(prev => [newCust, ...prev]);
+      }
+    }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tableParam = params.get("table");
+    const modeParam = params.get("mode");
+    const deliveryParam = params.get("delivery");
+
     if (tableParam) {
       setIsLoggedIn(true);
       setUserRole("customer");
       setTableNumber(tableParam);
+      setCustomerViewMode("DINE_IN");
+      localStorage.setItem("vrs_customer_mode", "DINE_IN");
+    } else if (modeParam === "delivery" || deliveryParam === "true") {
+      setIsLoggedIn(true);
+      setUserRole("customer");
+      setCustomerViewMode("DELIVERY");
+      localStorage.setItem("vrs_customer_mode", "DELIVERY");
     } else {
       const savedLogin = localStorage.getItem("isLoggedIn") === "true";
       const savedRole = localStorage.getItem("userRole");
@@ -508,18 +601,22 @@ const App = () => {
   };
 
   if (!isLoggedIn) {
-    return <UnifiedLogin onLogin={(role) => { 
+    return <UnifiedLogin onLogin={(role, initialCustomerMode) => { 
       setIsLoggedIn(true); 
       setUserRole(role); 
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("userRole", role);
+      if (role === 'customer' && initialCustomerMode) {
+        setCustomerViewMode(initialCustomerMode);
+        localStorage.setItem("vrs_customer_mode", initialCustomerMode);
+      }
     }} settings={settings} />;
   }
 
   if (userRole === 'admin') {
     return (
       <div className="app-container">
-        <AdminDashboard 
+        <AdminConsole 
           orders={orders} setOrders={setOrders} 
           onLogout={() => { 
             setIsLoggedIn(false); 
@@ -554,6 +651,23 @@ const App = () => {
   const isCustomer = userRole === 'customer';
   const isMenuOnlyMode = settings.orderingMode === 'MENU_ONLY' && isCustomer;
 
+  if (isCustomer && customerViewMode === 'DELIVERY') {
+    return (
+      <OnlineDeliveryPortal
+        menu={menu}
+        orders={orders}
+        settings={settings}
+        offers={offers}
+        customers={customers}
+        onPlaceDeliveryOrder={handlePlaceDeliveryOrder}
+        onSwitchToDineIn={() => {
+          setCustomerViewMode('DINE_IN');
+          localStorage.setItem('vrs_customer_mode', 'DINE_IN');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="app-container">
       {/* Hero Header */}
@@ -567,6 +681,31 @@ const App = () => {
           <p>{settings.tagline}</p>
         </div>
       </div>
+
+      {/* Switch to Online Delivery Banner */}
+      {isCustomer && (
+        <div 
+          className="delivery-promo-switch-banner"
+          onClick={() => {
+            setCustomerViewMode('DELIVERY');
+            localStorage.setItem('vrs_customer_mode', 'DELIVERY');
+          }}
+        >
+          <div className="dpsb-left">
+            <div className="dpsb-icon-circle">
+              <Bike size={20} color="#EA580C" />
+            </div>
+            <div>
+              <strong>Looking for Home Delivery?</strong>
+              <small>⚡ 30-35 mins delivery • Live tracking like Swiggy / Zomato</small>
+            </div>
+          </div>
+          <button className="btn-go-delivery">
+            <span>Order Online</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Menu Only Mode Notice Banner */}
       {isMenuOnlyMode && (
@@ -832,36 +971,6 @@ const App = () => {
                   <Plus size={16} /> Add More Items
                 </button>
 
-                {/* Coupon Code / Offers Engine Integration */}
-                <div className="coupon-box">
-                  <h4>🏷️ Apply Offers & Coupon Code</h4>
-                  <div className="coupon-input-group">
-                    <input 
-                      type="text" 
-                      placeholder="Enter Coupon Code (e.g. WELCOME50)" 
-                      value={couponCodeInput} 
-                      onChange={e => setCouponCodeInput(e.target.value)} 
-                    />
-                    <button onClick={applyCouponCode}>Apply</button>
-                  </div>
-                  {appliedOffer && (
-                    <div className="applied-offer-pill">
-                      <span>✓ Applied: <strong>{appliedOffer.code}</strong> (-₹{discountAmount})</span>
-                      <button onClick={() => setAppliedOffer(null)}>✕ Remove</button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Payment Method Selector */}
-                <div className="payment-method-selector">
-                  <h4>💳 Select Payment Method</h4>
-                  <div className="p-tabs">
-                    <button className={paymentMethod === 'Cash' ? 'active' : ''} onClick={() => setPaymentMethod('Cash')}>💵 Cash</button>
-                    <button className={paymentMethod === 'UPI' ? 'active' : ''} onClick={() => setPaymentMethod('UPI')}>📱 UPI / QR</button>
-                    <button className={paymentMethod === 'Card' ? 'active' : ''} onClick={() => setPaymentMethod('Card')}>💳 Card</button>
-                  </div>
-                </div>
-
                 <textarea placeholder="Special instructions (e.g. extra spicy parcel...)" value={specialNotes} onChange={e => setSpecialNotes(e.target.value)} />
                 
                 {userRole !== 'waiter' && (
@@ -907,6 +1016,60 @@ const App = () => {
 
         .menu-only-banner { background: #FEF3C7; color: #92400E; padding: 10px 16px; font-size: 0.85rem; border-bottom: 1px solid #FDE68A; text-align: center; }
         .assistance-alert-banner { background: #DCFCE7; color: #166534; padding: 10px 16px; font-size: 0.85rem; font-weight: 700; text-align: center; border-bottom: 1px solid #BBF7D0; }
+
+        .delivery-promo-switch-banner {
+          background: #FFF7ED;
+          border: 1px solid #FFEDD5;
+          padding: 12px 18px;
+          margin: 12px;
+          border-radius: 16px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(234, 88, 12, 0.08);
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .delivery-promo-switch-banner:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 18px rgba(234, 88, 12, 0.15);
+        }
+        .dpsb-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .dpsb-icon-circle {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          background: #FFEDD5;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .dpsb-left strong {
+          display: block;
+          font-size: 0.92rem;
+          color: #9A3412;
+        }
+        .dpsb-left small {
+          font-size: 0.75rem;
+          color: #C2410C;
+        }
+        .btn-go-delivery {
+          background: #EA580C;
+          color: white;
+          border: none;
+          padding: 8px 16px;
+          border-radius: 50px;
+          font-weight: 800;
+          font-size: 0.8rem;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          cursor: pointer;
+        }
 
         .sticky-header { position: sticky; top: 0; background: white; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .header-actions { display: flex; padding: 12px; gap: 10px; }
@@ -1060,32 +1223,61 @@ const UnifiedLogin = ({ onLogin, settings }) => {
   };
 
   return (
-    <div className="login-screen" style={{height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', padding: '20px'}}>
-      <div className="login-box" style={{background: 'white', padding: '40px 30px', borderRadius: '30px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)', width: '100%', maxWidth: '400px', textAlign: 'center'}}>
-        <ChefHat size={60} color="#E8621A" style={{marginBottom: '20px'}} />
-        <h1 style={{fontSize: '1.8rem', marginBottom: '10px'}}>{settings.name}</h1>
-        <p style={{color: '#666', marginBottom: '30px'}}>Please sign in to continue</p>
+    <div className="login-screen" style={{minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', padding: '20px'}}>
+      <div className="login-box" style={{background: 'white', padding: '40px 30px', borderRadius: '30px', boxShadow: '0 10px 40px rgba(0,0,0,0.05)', width: '100%', maxWidth: '420px', textAlign: 'center'}}>
+        <ChefHat size={60} color="#E8621A" style={{marginBottom: '15px'}} />
+        <h1 style={{fontSize: '1.8rem', marginBottom: '6px'}}>{settings.name}</h1>
+        <p style={{color: '#666', marginBottom: '24px'}}>{settings.tagline || "Fresh & Tasty Dhaba Cuisine"}</p>
+
+        {/* Customer Direct Entry Options */}
+        <div style={{ background: '#FFF7ED', border: '1px solid #FFEDD5', borderRadius: '16px', padding: '16px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <span style={{ fontSize: '0.78rem', color: '#9A3412', fontWeight: '800', letterSpacing: '0.5px' }}>CUSTOMER QUICK ACCESS</span>
+          
+          <button 
+            type="button"
+            onClick={() => onLogin('customer', 'DELIVERY')}
+            style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: '#EA580C', color: 'white', fontWeight: '800', fontSize: '0.95rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(234, 88, 12, 0.3)' }}
+          >
+            <Bike size={18} />
+            <span>Order Online Delivery (Swiggy / Zomato Style)</span>
+          </button>
+
+          <button 
+            type="button"
+            onClick={() => onLogin('customer', 'DINE_IN')}
+            style={{ width: '100%', padding: '11px', borderRadius: '12px', border: '1px solid #CBD5E1', background: '#FFFFFF', color: '#334155', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+          >
+            <UtensilsCrossed size={15} />
+            <span>Browse Dine-In / Table Menu</span>
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', color: '#94A3B8' }}>
+          <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
+          <span style={{ padding: '0 10px', fontSize: '0.75rem', fontWeight: '700' }}>OR STAFF SIGN IN</span>
+          <div style={{ flex: 1, height: '1px', background: '#E2E8F0' }} />
+        </div>
         
         <input 
-          placeholder="Username" 
+          placeholder="Staff Username (admin / waiter)" 
           value={user} 
           onChange={e => setUser(e.target.value)} 
-          style={{width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #eee', marginBottom: '15px', outline: 'none'}} 
+          style={{width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #eee', marginBottom: '12px', outline: 'none', fontSize: '0.9rem'}} 
         />
         <input 
           type="password" 
           placeholder="Password" 
           value={pass} 
           onChange={e => setPass(e.target.value)} 
-          style={{width: '100%', padding: '15px', borderRadius: '12px', border: '1px solid #eee', marginBottom: '25px', outline: 'none'}} 
+          style={{width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #eee', marginBottom: '20px', outline: 'none', fontSize: '0.9rem'}} 
         />
         
         <button 
           onClick={handleLogin} 
           className="btn-primary" 
-          style={{width: '100%', padding: '15px', borderRadius: '12px', border: 'none', background: '#E8621A', color: 'white', fontSize: '1rem', fontWeight: '700', cursor: 'pointer'}}
+          style={{width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: '#1E293B', color: 'white', fontSize: '0.95rem', fontWeight: '700', cursor: 'pointer'}}
         >
-          Sign In
+          Sign In to Staff Console
         </button>
       </div>
     </div>
@@ -1111,6 +1303,29 @@ const AdminDashboard = ({
     setOrders(prev => prev.map(o => o.id === id ? { ...o, takeawayStatus } : o));
   };
 
+  const updateDeliveryStatus = (id, deliveryStatus) => {
+    setOrders(prev => prev.map(o => o.id === id ? { 
+      ...o, 
+      deliveryStatus,
+      status: deliveryStatus === 'Delivered' ? 'Ready' : (deliveryStatus === 'Dispatched' ? 'Ready' : 'Confirmed')
+    } : o));
+  };
+
+  const assignDeliveryRider = (id, partner) => {
+    setOrders(prev => prev.map(o => o.id === id ? { 
+      ...o, 
+      deliveryPartner: partner,
+      deliveryStatus: 'Dispatched'
+    } : o));
+  };
+
+  const activeDeliveryOrdersCount = orders.filter(o => 
+    o.orderType === 'Delivery' && 
+    (o.deliveryStatus || o.status) !== 'Delivered' && 
+    (o.deliveryStatus || o.status) !== 'Completed' &&
+    o.status !== 'Billed'
+  ).length;
+
   const handlePrint = (order) => {
     setPrintingOrder(order);
     setTimeout(() => {
@@ -1125,7 +1340,7 @@ const AdminDashboard = ({
     const formattedMob = cleanMob.length === 10 ? `91${cleanMob}` : cleanMob;
     
     const itemsStr = order.items.map(i => `${i.quantity}x ${i.name} = ₹${i.price * i.quantity}`).join('\n');
-    const msg = `🧾 *${settings.name} - Digital Receipt*\nOrder: #${order.id} | ${order.tokenNumber ? `TOKEN #${order.tokenNumber}` : `Table: ${order.tableNumber}`}\nDate: ${new Date().toLocaleString()}\n\nItems:\n${itemsStr}\n--------------------\nSubtotal: ₹${order.subtotal || order.total}\n${order.packagingCharge > 0 ? `Packaging Container Fee: +₹${order.packagingCharge}\n` : ''}GST (${settings.gst}%): ₹${Math.round(((order.subtotal || order.total) * settings.gst)/100)}\nDiscount: ₹${order.discountAmount || 0}\n*TOTAL PAYABLE: ₹${order.netTotal || order.total}*\nPayment Method: ${order.paymentMethod || 'Cash'}\n--------------------\nThank you for dining with us! 🙏`;
+    const msg = `🧾 *${settings.name} - Digital Receipt*\nOrder: #${order.id} | ${order.tokenNumber ? `TOKEN #${order.tokenNumber}` : `Table: ${order.tableNumber}`}\nDate: ${new Date().toLocaleString()}\n\nItems:\n${itemsStr}\n--------------------\nSubtotal: ₹${order.subtotal || order.total}\n${order.packagingCharge > 0 ? `Packaging Container Fee: +₹${order.packagingCharge}\n` : ''}${order.deliveryFee > 0 ? `Delivery Fee: +₹${order.deliveryFee}\n` : ''}GST (${settings.gst}%): ₹${Math.round(((order.subtotal || order.total) * settings.gst)/100)}\nDiscount: ₹${order.discountAmount || 0}\n*TOTAL PAYABLE: ₹${order.netTotal || order.total}*\nPayment Method: ${order.paymentMethod || 'Cash'}\n--------------------\nThank you for dining with us! 🙏`;
     
     const url = `https://wa.me/${formattedMob}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
@@ -1143,6 +1358,10 @@ const AdminDashboard = ({
         
         <div className="dash-tabs">
           <button className={tab === 'Orders' ? 'active' : ''} onClick={() => setTab('Orders')}><ShoppingBag size={14}/> Orders</button>
+          <button className={tab === 'Delivery' ? 'active' : ''} onClick={() => setTab('Delivery')}>
+            <Bike size={14}/> Online Delivery
+            {activeDeliveryOrdersCount > 0 && <span className="tab-badge">{activeDeliveryOrdersCount}</span>}
+          </button>
           <button className={tab === 'Takeaway' ? 'active' : ''} onClick={() => setTab('Takeaway')}><Box size={14}/> Parcel Pipeline</button>
           <button className={tab === 'Tables' ? 'active' : ''} onClick={() => setTab('Tables')}><Table size={14}/> Tables Grid</button>
           <button className={tab === 'QRGen' ? 'active' : ''} onClick={() => setTab('QRGen')}><QrCode size={14}/> QR Generator</button>
@@ -1202,6 +1421,16 @@ const AdminDashboard = ({
               </div>
             ))}
           </div>
+        )}
+
+        {tab === 'Delivery' && (
+          <DeliveryManagement 
+            orders={orders}
+            onUpdateDeliveryStatus={updateDeliveryStatus}
+            onAssignRider={assignDeliveryRider}
+            onPrintDeliveryBill={handlePrint}
+            settings={settings}
+          />
         )}
 
         {tab === 'Takeaway' && (
@@ -1294,10 +1523,25 @@ const AdminDashboard = ({
           <div className="receipt-header">
             <h2>{settings.name}</h2>
             <p>{settings.tagline}</p>
+            {printingOrder.orderType === 'Delivery' && (
+              <p style={{fontSize: '13px', fontWeight: 'bold', marginTop: '4px'}}>*** ONLINE HOME DELIVERY SLIP ***</p>
+            )}
             <hr />
           </div>
           <div className="receipt-meta">
-            {printingOrder.tokenNumber ? (
+            {printingOrder.orderType === 'Delivery' ? (
+              <>
+                <p style={{fontSize: '15px', fontWeight: 'bold'}}>DELIVERY TOKEN #{printingOrder.tokenNumber || printingOrder.id}</p>
+                <p><strong>Customer:</strong> {printingOrder.customerName} ({printingOrder.customerMobile})</p>
+                <p><strong>Deliver To:</strong> {printingOrder.deliveryAddress?.houseNo}, {printingOrder.deliveryAddress?.streetArea}</p>
+                {printingOrder.deliveryAddress?.landmark && <p><strong>Landmark:</strong> {printingOrder.deliveryAddress.landmark}</p>}
+                <p><strong>PIN:</strong> {printingOrder.deliveryAddress?.pincode}</p>
+                {printingOrder.deliveryInstructions && <p><strong>Note:</strong> {printingOrder.deliveryInstructions}</p>}
+                {printingOrder.deliveryPartner && (
+                  <p><strong>Assigned Rider:</strong> {printingOrder.deliveryPartner.name} ({printingOrder.deliveryPartner.phone})</p>
+                )}
+              </>
+            ) : printingOrder.tokenNumber ? (
               <p style={{fontSize: '16px', fontWeight: 'bold'}}>PARCEL TOKEN #{printingOrder.tokenNumber}</p>
             ) : (
               <p><strong>Table:</strong> {printingOrder.tableNumber}</p>
@@ -1305,7 +1549,9 @@ const AdminDashboard = ({
             <p><strong>Order ID:</strong> #{printingOrder.id}</p>
             <p><strong>Order Type:</strong> {printingOrder.orderType || 'Dine-in'}</p>
             {printingOrder.estimatedPickupTime && <p><strong>Pickup Time:</strong> {printingOrder.estimatedPickupTime}</p>}
-            {printingOrder.customerMobile && <p><strong>Customer:</strong> {printingOrder.customerName} ({printingOrder.customerMobile})</p>}
+            {printingOrder.customerMobile && printingOrder.orderType !== 'Delivery' && (
+              <p><strong>Customer:</strong> {printingOrder.customerName} ({printingOrder.customerMobile})</p>
+            )}
             <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
             <hr />
           </div>
@@ -1331,6 +1577,7 @@ const AdminDashboard = ({
           <div className="receipt-total">
             <div className="row"><span>Subtotal</span><span>₹{printingOrder.subtotal || printingOrder.total}</span></div>
             {printingOrder.packagingCharge > 0 && <div className="row"><span>Packaging Container Fee</span><span>+ ₹{printingOrder.packagingCharge}</span></div>}
+            {printingOrder.deliveryFee > 0 && <div className="row"><span>Delivery Fee</span><span>+ ₹{printingOrder.deliveryFee}</span></div>}
             {printingOrder.discountAmount > 0 && <div className="row"><span>Discount ({printingOrder.discountCode})</span><span>- ₹{printingOrder.discountAmount}</span></div>}
             <div className="row"><span>GST ({settings.gst}%)</span><span>₹{Math.round(((printingOrder.subtotal || printingOrder.total) * settings.gst) / 100)}</span></div>
             <div className="row grand"><span>NET PAYABLE TOTAL</span><span>₹{printingOrder.netTotal || printingOrder.total}</span></div>
@@ -1577,6 +1824,28 @@ const SettingsEditor = ({ settings, setSettings }) => {
         
         <label>Default Packaging Container Fee (₹)</label>
         <input type="number" value={settings.packagingCharge || 15} onChange={e => setSettings({...settings, packagingCharge: parseInt(e.target.value) || 0})} className="input-field" />
+
+        <label style={{marginTop: '10px', fontWeight: 'bold'}}>🛵 Online Delivery Fee & Policies (Swiggy / Zomato Style)</label>
+        <div style={{display: 'flex', gap: '10px'}}>
+          <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '4px'}}>
+            <label style={{fontSize: '0.8rem', color: '#666'}}>Base Delivery Fee (₹)</label>
+            <input 
+              type="number" 
+              value={settings.deliveryFee ?? 30} 
+              onChange={e => setSettings({...settings, deliveryFee: parseInt(e.target.value) || 0})} 
+              className="input-field" 
+            />
+          </div>
+          <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '4px'}}>
+            <label style={{fontSize: '0.8rem', color: '#666'}}>Free Delivery Above (₹)</label>
+            <input 
+              type="number" 
+              value={settings.freeDeliveryAbove ?? 299} 
+              onChange={e => setSettings({...settings, freeDeliveryAbove: parseInt(e.target.value) || 0})} 
+              className="input-field" 
+            />
+          </div>
+        </div>
 
         <label style={{marginTop: '10px', fontWeight: 'bold'}}>📱 QR Table Ordering Mode (Admin Mode)</label>
         <select 

@@ -77,16 +77,23 @@ const orderSchema = new mongoose.Schema({
   total: Number,
   subtotal: Number,
   packagingCharge: { type: Number, default: 0 },
+  deliveryFee: { type: Number, default: 0 },
   discountAmount: { type: Number, default: 0 },
   discountCode: String,
   netTotal: Number,
   customerMobile: String,
   customerName: String,
-  orderType: { type: String, default: 'Dine-in' }, // Dine-in vs Takeaway
+  orderType: { type: String, default: 'Dine-in' }, // Dine-in vs Takeaway vs Delivery
+  deliveryAddress: Object,
+  deliveryPartner: Object,
+  deliveryStatus: { type: String, default: 'Confirmed' },
+  deliveryInstructions: String,
   estimatedPickupTime: String, // e.g. 15 mins
+  estimatedDeliveryTime: String, // e.g. 30-35 mins
   takeawayStatus: { type: String, default: 'Order' }, // Order, Kitchen, Ready, Packing, Billing, Payment, Completed
   waiterName: { type: String, default: 'Staff' },
   paymentMethod: { type: String, default: 'Cash' }, // Cash, UPI, Card
+  paymentStatus: String,
   notes: String,
   status: { type: String, default: 'Pending' },
   created_at: { type: Date, default: Date.now }
@@ -96,7 +103,11 @@ const settingsSchema = new mongoose.Schema({
   name: { type: String, default: "VRS Garden Dhaba" },
   tagline: { type: String, default: "Fresh & Tasty" },
   gst: { type: Number, default: 5 },
-  packagingCharge: { type: Number, default: 15 }
+  packagingCharge: { type: Number, default: 15 },
+  deliveryFee: { type: Number, default: 30 },
+  freeDeliveryAbove: { type: Number, default: 299 },
+  deliveryEnabled: { type: Boolean, default: true },
+  orderingMode: { type: String, default: 'SELF_ORDER' }
 });
 
 const Menu = mongoose.model('Menu', menuSchema);
@@ -196,6 +207,26 @@ app.post('/api/orders', async (req, res) => {
 app.patch('/api/orders/:id/status', async (req, res) => {
   try {
     await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json(err); }
+});
+
+app.patch('/api/orders/:id/delivery-status', async (req, res) => {
+  try {
+    await Order.findByIdAndUpdate(req.params.id, { 
+      deliveryStatus: req.body.deliveryStatus,
+      status: req.body.deliveryStatus === 'Delivered' ? 'Ready' : 'Confirmed'
+    });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json(err); }
+});
+
+app.patch('/api/orders/:id/assign-rider', async (req, res) => {
+  try {
+    await Order.findByIdAndUpdate(req.params.id, { 
+      deliveryPartner: req.body.deliveryPartner,
+      deliveryStatus: 'Dispatched'
+    });
     res.json({ success: true });
   } catch (err) { res.status(500).json(err); }
 });
@@ -323,16 +354,19 @@ app.get('/api/stats', async (req, res) => {
   try {
     const orders = await Order.find();
     const totalRevenue = orders.reduce((acc, o) => acc + (o.netTotal || o.total || 0), 0);
-    const dineInRevenue = orders.filter(o => o.orderType !== 'Takeaway').reduce((acc, o) => acc + (o.netTotal || o.total || 0), 0);
+    const dineInRevenue = orders.filter(o => o.orderType === 'Dine-in' || (!o.orderType && o.tableNumber !== 'Takeaway' && o.tableNumber !== 'Delivery')).reduce((acc, o) => acc + (o.netTotal || o.total || 0), 0);
     const takeawayRevenue = orders.filter(o => o.orderType === 'Takeaway').reduce((acc, o) => acc + (o.netTotal || o.total || 0), 0);
+    const deliveryRevenue = orders.filter(o => o.orderType === 'Delivery').reduce((acc, o) => acc + (o.netTotal || o.total || 0), 0);
     
     res.json({
       totalRevenue,
       dineInRevenue,
       takeawayRevenue,
+      deliveryRevenue,
       totalOrders: orders.length,
-      pendingCount: orders.filter(o => o.status === 'Pending').length,
-      completedCount: orders.filter(o => o.status === 'Ready' || o.status === 'Billed').length
+      deliveryOrdersCount: orders.filter(o => o.orderType === 'Delivery').length,
+      pendingCount: orders.filter(o => o.status === 'Pending' || o.deliveryStatus === 'Confirmed').length,
+      completedCount: orders.filter(o => o.status === 'Ready' || o.status === 'Billed' || o.deliveryStatus === 'Delivered').length
     });
   } catch (err) { res.status(500).json(err); }
 });
